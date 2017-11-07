@@ -1,0 +1,184 @@
+<!--The content below is only a placeholder and can be replaced.-->
+<div class="form-container">
+
+    <div class="search-box">
+
+        <div class="form_title_wrapper">
+            <h1 class="form_title">Stock Market Search</h1>
+        </div>
+
+        <div class="form_search_wrapper">
+            <form (ngSubmit)="onSubmit(stockSymbol.value.toUpperCase())">
+                <mat-form-field>
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <label>Enter Stock Ticker Symbol:<span style="color: red">*</span></label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input name="input_symbol" #stockSymbol 
+                                [matAutocomplete]="auto" required [formControl]="symbol"
+                                style="width: 100%" placeholder="e.g. AAPL" >
+                            <mat-autocomplete (optionSelected)="onSubmit(stockSymbol.value.toUpperCase())"
+                                #auto="matAutocomplete">
+                                <mat-option *ngFor="let symbol of searchResult" [value]="symbol.Symbol">
+                                {{ symbol.Symbol }} - {{symbol.Name}} ({{symbol.Exchange}})
+                                </mat-option>
+                            </mat-autocomplete>
+                            <div *ngIf="errMessage">{{ errMessage }}</div>
+                        </div>
+                        <div class="col-sm-3">
+                            <button type="submit" class="btn btn-primary" >Get Quote</button>
+                            <button (click)="stockSymbol.value = '';"
+                                type="button" class="btn btn-secondary" >Clear</button>
+                        </div>
+                    </div>
+                </mat-form-field>
+            </form>
+        </div>
+    </div>
+
+
+
+    <div class="result_tabs">
+
+        <div class="top-nav_bar">
+            <ul class="nav nav-pills">
+              <li class="active"><a data-toggle="tab" href="#home">Current Stock</a></li>
+              <li><a data-toggle="tab" href="#menu_history">Historical Charts</a></li>
+              <li><a data-toggle="tab" href="#menu_news">News Feeds</a></li>
+            </ul>
+        </div>
+
+          
+        <div class="tab-content" style="padding: 0px 20px;">
+            <hr style="margin-top:0px; margin-bottom:0px"/>
+
+            <div id="home" class="tab-pane fade in active">
+                <div class="row" style="margin-top: 20px">
+                    <div class="col-md-6">
+                        <div style="height: 35px">
+                            <div style="float:left; font-weight: bold">Stock Details</div>
+                            <div style="float:right; text-align: right">
+                                <div class="icon_wrap">
+                                    <img src="http://cs-server.usc.edu:45678/hw/hw8/images/facebook.png" 
+                                        style="width: 25px; height: 25px; margin-top:4px"/>
+                                </div>
+                                <div class="icon_wrap">
+                                    <img src="" style="width: 20px"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 100%; clear:both; margin-top: 15px;">
+                            <table class = "table-stock">
+                                <tr>
+                                    <td class = "firstCol">Stock Ticker Symbol</td>
+                                    <td class = "secondCol">MSFT</td>
+                                </tr>
+                                <tr>
+                                    <td class = "firstCol">Last Price</td>
+                                    <td class = "secondCol">73.87</td>
+                                </tr>
+                                <tr>
+                                    <td class = "firstCol">Change (Change Percent)</td>
+                                    <td class = "secondCol green">0.02 (0.03%)
+                                        <img style="width:16px" src='http://cs-server.usc.edu:45678/hw/hw8/images/Up.png'/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class = "firstCol">Timestamp</td>
+                                    <td class = "secondCol">2017-09-28 16:00:00 EDT</td>
+                                </tr>
+                                <tr>
+                                    <td class = "firstCol">Open</td>
+                                    <td class = "secondCol">73.54</td>
+                                </tr> 
+                                <tr>
+                                    <td class = "firstCol">Close</td>
+                                    <td class = "secondCol">73.87</td>
+                                </tr>
+                                <tr>
+                                    <td class = "firstCol">Day's Range</td>
+                                    <td class = "secondCol">73.31 - 73.97</td>
+                                </tr>
+                                <tr>
+                                    <td class = "firstCol">Volume</td>
+                                    <td class = "secondCol">10,814,063</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div>
+                            <ul class="nav nav-tabs">
+                            <li class="active"><a data-toggle="tab" href="#chart_price">Price</a></li>
+                            <li><a data-toggle="tab" href="#indicator_SMA">SMA</a></li>
+                            <li><a data-toggle="tab" href="#indicator_EMA">EMA</a></li>
+                            <li><a data-toggle="tab" href="#indicator_STOCH">STOCH</a></li>
+                            <li><a data-toggle="tab" href="#indicator_RSI">RSI</a></li>
+                            <li><a data-toggle="tab" href="#indicator_ADX">ADX</a></li>
+                            <li><a data-toggle="tab" href="#indicator_CCI">CCI</a></li>
+                            <li><a data-toggle="tab" href="#indicator_BBANDS">BBANDS</a></li>
+                            <li><a data-toggle="tab" href="#indicator_MACD">MACD</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="tab-content">
+                            <div id="chart_price" class="tab-pane fade in active">
+                                <div class="detail_wrapper">
+                                    <chart [options]="priceChartOptions"></chart>
+                                </div>
+                            </div>
+                            
+                            <div id="indicator_SMA" class="tab-pane fade">
+                                <div class="detail_wrapper">
+                                    <chart [options]="SMAChartOptions"></chart>
+                                </div>
+                            </div>
+                            <div id="indicator_EMA" class="tab-pane fade">
+                                <div class="detail_wrapper">
+                                    <chart [options]="EMAChartOptions"></chart>
+                                </div>
+                            </div>
+
+
+                            <div id="indicator_STOCH" class="tab-pane fade">
+                                STOCH
+                            </div>
+                            <div id="indicator_RSI" class="tab-pane fade">
+                                RSI
+                            </div>
+                            <div id="indicator_ADX" class="tab-pane fade">
+                                ADX
+                            </div>
+                            <div id="indicator_CCI" class="tab-pane fade">
+                                CCI
+                            </div>
+                            <div id="indicator_BBANDS" class="tab-pane fade">
+                                BBANDS
+                            </div>
+                            <div id="indicator_MACD" class="tab-pane fade">
+                                MACD
+                            </div>
+                        </div>
+
+ 
+                    </div>
+                </div>
+            </div>
+        
+            <div id="menu_history" class="tab-pane fade">
+                <h3>Menu 1</h3>
+                <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            </div>
+            
+            <div id="menu_news" class="tab-pane fade">
+                <h3>Menu 2</h3>
+                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+
