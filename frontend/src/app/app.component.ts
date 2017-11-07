@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { AppService } from './app.service';
+import { ChartsService } from './charts.service';
 
 import { Observable } from 'rxjs/Observable';
 import { FormControl } from '@angular/forms';
@@ -19,19 +20,18 @@ import { forkJoin } from "rxjs/observable/forkJoin";
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'app';
+  title = 'Stock Search';
   symbol : FormControl = new FormControl();
   // searchResult: Observable<any[]>;
   symbolName = "AAPL";
-  searchResult;
+  searchResult: Object;
 
   priceChartOptions: Object;
-  SMAChartOptions: Object;
-  EMAChartOptions: Object;
+  SMAChartOptions: Object; EMAChartOptions: Object;
+  RSIChartOptions: Object; ADXChartOptions: Object; CCIChartOptions: Object;
+  STOCHChartOptions: Object; BBANDSChartOptions: Object; MACDChartOptions: Object;
 
-  arr = ["SMA", "EMA", "STOCH"];
-
-  constructor(private service: AppService, private http: HttpClient){ 
+  constructor(private service: AppService, private chartService: ChartsService, private http: HttpClient){ 
     this.symbol.valueChanges
     .debounceTime(150)
     .subscribe(data => {
@@ -49,80 +49,125 @@ export class AppComponent {
   }
 
 
-  charts = [];
-
   ngOnInit(){ 
     this.onSubmit('AAPL');
-
-    this.drawSingleLineChart('AAPL');
+    this.drawLineCharts('AAPL');
   }
 
 
-  parseSingleTarget(jsonObj, target){
-      var array_date = [];
-      var array_indicator = [];
-      var cnt = 0;
-      for(var key in jsonObj) {
-          if(cnt++ >= 126)
-              break;
-          array_date.push(key.substring(5).replace(/-/g, "\/"));
-          array_indicator.push(parseFloat(jsonObj[key][target]));
+
+
+  /**
+   * Draw all indicator charts
+   * @param symbol 
+   */
+  drawLineCharts(symbol){
+    var indexMap = [];
+    indexMap['Price'] = 0; //for price chart
+    indexMap['SMA'] = 1; indexMap['EMA'] = 2; indexMap['STOCH'] = 3; indexMap['RSI'] = 4;
+    indexMap['ADX'] = 5; indexMap['CCI'] = 6; indexMap['BBANDS'] = 7; indexMap['MACD'] = 8;
+    
+    /***** Single Line *****/
+    this.drawSingleLineChart(indexMap, symbol, 'SMA');
+    this.drawSingleLineChart(indexMap, symbol, 'EMA');
+    this.drawSingleLineChart(indexMap, symbol, 'RSI');
+    this.drawSingleLineChart(indexMap, symbol, 'ADX');
+    this.drawSingleLineChart(indexMap, symbol, 'CCI');
+    /***** Single Line*****/
+
+    /***** Mutiple Lines *****/
+    this.drawMultipleLineChart(indexMap, symbol, 'STOCH', 'SlowD', 'SlowK', ''); //Two
+    this.drawMultipleLineChart(indexMap, symbol, 'BBANDS', 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'); //Three
+    this.drawMultipleLineChart(indexMap, symbol, 'MACD', 'MACD_Signal', 'MACD', 'MACD_Hist'); //Three
+    /***** Mutiple Lines *****/
+  }
+
+  /**
+   * drwa a single line chart
+   * @param indexMap 
+   * @param symbol 
+   * @param indicator 
+   */
+  drawSingleLineChart(indexMap, symbol, indicator){
+    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
+      console.log(data);
+      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      var parseRes = this.chartService.parseSingleTarget(indicator_data, indicator);
+
+      configs[indexMap[indicator]]['xAxis']['categories'] = parseRes.date;
+      configs[indexMap[indicator]]['series'][0]['name'] = symbol + ' ' + indicator;
+      configs[indexMap[indicator]]['series'][0]['data'] = parseRes.indicator;
+      switch(indexMap[indicator]){
+        case 1:{ this.SMAChartOptions = configs[indexMap[indicator]]; break; } 
+        case 2:{ this.EMAChartOptions = configs[indexMap[indicator]]; break; }
+        case 4:{ this.RSIChartOptions = configs[indexMap[indicator]]; break; }
+        case 5:{ this.ADXChartOptions = configs[indexMap[indicator]]; break; }
+        case 6:{ this.CCIChartOptions = configs[indexMap[indicator]]; break; }
       }
-      array_date.reverse();
-      array_indicator.reverse();
-      return {
-        date: array_date,
-        indicator: array_indicator
-      };
+    });
   }
 
+
+  /**
+   * draw chart with two lines (two targets)
+   * @param indexMap 
+   * @param symbol 
+   * @param indicator 
+   * @param target1 
+   * @param target2 
+   */
+  drawTwoLineChart(indexMap, symbol, indicator, target1, target2){
+    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
+      console.log(data);
+      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      var parseRes = this.chartService.parseTwoTarget(indicator_data, target1, target2); //SlowD, SlowK
+
+      configs[indexMap[indicator]]['xAxis']['categories'] = parseRes.date;
+      configs[indexMap[indicator]]['series'][0]['name'] = symbol + ' ' + target1;
+      configs[indexMap[indicator]]['series'][0]['data'] = parseRes.indicator_1;
+      configs[indexMap[indicator]]['series'][1]['name'] = symbol + ' ' + target2;
+      configs[indexMap[indicator]]['series'][1]['data'] = parseRes.indicator_2;
+      this.STOCHChartOptions = configs[indexMap[indicator]];
+    });
+  }
+
+  drawMultipleLineChart(indexMap, symbol, indicator, target1, target2, target3){
+    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    var isTwoLine = false;
+    if(target3.length == 0)
+      isTwoLine = true;
+
+    this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
+      console.log(data);
+      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      var parseRes;
+      if(isTwoLine == true)
+        parseRes = this.chartService.parseTwoTarget(indicator_data, target1, target2); //SlowD, SlowK
+      else 
+        parseRes = this.chartService.parseThreearget(indicator_data, target1, target2, target3); 
+
+      configs[indexMap[indicator]]['xAxis']['categories'] = parseRes.date;
+      configs[indexMap[indicator]]['series'][0]['name'] = symbol + ' ' + target1;
+      configs[indexMap[indicator]]['series'][0]['data'] = parseRes.indicator_1;
+      configs[indexMap[indicator]]['series'][1]['name'] = symbol + ' ' + target2;
+      configs[indexMap[indicator]]['series'][1]['data'] = parseRes.indicator_2;
+
+      if(isTwoLine == false){
+        //three lines
+        configs[indexMap[indicator]]['series'][2]['name'] = symbol + ' ' + target3;
+        configs[indexMap[indicator]]['series'][2]['data'] = parseRes.indicator_3;
+      }
+
+      switch(indexMap[indicator]){
+        case 3:{ this.STOCHChartOptions = configs[indexMap[indicator]]; break; } 
+        case 7:{ this.BBANDSChartOptions = configs[indexMap[indicator]]; break; }
+        case 8:{ this.MACDChartOptions = configs[indexMap[indicator]]; break; }
+      }      
+    });
+  }
   
-  async drawSingleLineChart(symbol){
-    // let SMAURL = this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA');
-    // let EMAURL = this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=EMA');
-    // let STOCHURL = this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=STOCH');
-    // var dataSMA, dataEMA, dataSTOCH;
-    // forkJoin([SMAURL, EMAURL, STOCHURL]).subscribe(results => {
-    //   dataSMA = results[0]
-    //   console.log(dataSMA);
-    //   dataEMA = results[1];
-    //   console.log(dataEMA);
-    //   dataSTOCH = results[2];
-    //   console.log(dataSTOCH);
-    // });
-
-    /***** SMA *****/
-    this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA').subscribe(dataSMA => {
-      console.log(dataSMA);
-      var SMA_data = dataSMA['Technical Analysis: SMA']; //full size data
-      var parseRes = this.parseSingleTarget(SMA_data, 'SMA');
-      // configs[0]['title']['text'] = 'SMA';
-      configs[0]['xAxis']['categories'] = parseRes.date;
-      configs[0]['series'][0]['data'] = parseRes.indicator;
-      this.SMAChartOptions = configs[0];
-    });
-    /***** SMA *****/
-
-
-    /***** EMA *****/
-    this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=EMA').subscribe(dataEMA => {
-      console.log(dataEMA);
-      var EMA_data = dataEMA['Technical Analysis: EMA']; //full size data
-      var parseRes = this.parseSingleTarget(EMA_data, 'EMA');
-      configs[1]['xAxis']['categories'] = parseRes.date;
-      configs[1]['series'][0]['data'] = parseRes.indicator;
-      this.EMAChartOptions = configs[1];
-    });
-    /***** EMA *****/
-
-    // configs[0]['title']['text'] = 'EMA';
-    // configs[0]['xAxis']['categories'] = parseRes.date;
-    // configs[0]['series'][0]['data'] = parseRes.indicator;
-    // console.log('EMA: ' + configs[0]['series'][0]['data']);
-    // this.EMAChartOptions = configs[0];
-
-  }
-
 
 
 

@@ -39,28 +39,30 @@ export class AppService {
         return this.http.get(fullURL).toPromise();
     }
 
-    /**
-     * query a single indicator of the specific symbol
-     * http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA
-     * @param symbol 
-     * @param indicator 
-     */
-    queryIndicator(symbol, indicator){
-        let fullURL = this.indicator_url + '&symbol=' + symbol + "&indicator=" + indicator;
-        console.log(fullURL);
-        return this.http.get(fullURL).toPromise();
-    }
+    
+    
+    // /**
+    //  * query a single indicator of the specific symbol
+    //  * http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA
+    //  * @param symbol 
+    //  * @param indicator 
+    //  */
+    // queryIndicator(symbol, indicator){
+    //     let fullURL = this.indicator_url + '&symbol=' + symbol + "&indicator=" + indicator;
+    //     console.log(fullURL);
+    //     return this.http.get(fullURL).toPromise();
+    // }
 
 
 
-    /**
-     * query all indicators of the specific symbol
-     * @param symbol 
-     */
-    queryAllIndicators(symbol){
-        let fullURL = this.indicator_url + '&symbol=' + symbol;
-        console.log(fullURL);
-        return this.http.get(fullURL).toPromise();
-    }
+    // /**
+    //  * query all indicators of the specific symbol
+    //  * @param symbol 
+    //  */
+    // queryAllIndicators(symbol){
+    //     let fullURL = this.indicator_url + '&symbol=' + symbol;
+    //     console.log(fullURL);
+    //     return this.http.get(fullURL).toPromise();
+    // }
 
 }
