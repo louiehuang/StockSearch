@@ -23,10 +23,12 @@ export class AppComponent {
   title = 'Stock Search';
   symbol : FormControl = new FormControl();
   // searchResult: Observable<any[]>;
-  symbolName = "AAPL";
+  searchSymbolName = "AAPL"; //this value will change when typing search input
+  symbolName = "AAPL"; //this value don't change when typing search input
   searchResult: Object;
 
-  lastPrice; changePercent; timestamp; curOpen; curClose; curRange; curVolume;
+  lastPrice; changeNum; changePercent; changeToColor; changeToImg;
+  timestamp; curOpen; curClose; curRange; curVolume; 
 
   priceChartOptions: Object;
   SMAChartOptions: Object; EMAChartOptions: Object;
@@ -39,8 +41,8 @@ export class AppComponent {
     .subscribe(data => {
         if(data !== ""){
           this.service.searchSymbol(data).subscribe(response =>{
-              this.symbolName = data;
-              console.log(this.symbolName);
+              this.searchSymbolName = data;
+              console.log(this.searchSymbolName);
               this.searchResult = response;
               console.log(response);
           })
@@ -201,8 +203,12 @@ export class AppComponent {
     this.curVolume = curObj['5. volume'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");;
 
     this.lastPrice = parseFloat(prevObj['4. close']).toFixed(2);
-    var change = this.curClose - this.lastPrice;
+    
+    this.changeNum = (this.curClose - this.lastPrice).toFixed(2);
+    // console.log(((this.changeNum / this.lastPrice) * 100).toFixed(2));
 
+    this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2) + "%";
+    // this.changeNum = -0.2; //test negative change
 
     //draw price chart
     this.priceChartOptions = {

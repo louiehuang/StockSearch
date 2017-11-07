@@ -81,6 +81,10 @@
     color: green;
 }
 
+.red{
+    color: red;
+}
+
 .result_tabs .tab-content .table-stock tr:nth-child(even) {
 	background: #FFFFFF;
 }
