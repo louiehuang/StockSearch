@@ -72,11 +72,11 @@
                             <table class = "table-stock">
                                 <tr>
                                     <td class = "firstCol">Stock Ticker Symbol</td>
-                                    <td class = "secondCol">MSFT</td>
+                                    <td class = "secondCol">{{symbolName}}</td>
                                 </tr>
                                 <tr>
                                     <td class = "firstCol">Last Price</td>
-                                    <td class = "secondCol">73.87</td>
+                                    <td class = "secondCol">{{lastPrice}}</td>
                                 </tr>
                                 <tr>
                                     <td class = "firstCol">Change (Change Percent)</td>
@@ -90,19 +90,19 @@
                                 </tr>
                                 <tr>
                                     <td class = "firstCol">Open</td>
-                                    <td class = "secondCol">73.54</td>
+                                    <td class = "secondCol">{{curOpen}}</td>
                                 </tr> 
                                 <tr>
                                     <td class = "firstCol">Close</td>
-                                    <td class = "secondCol">73.87</td>
+                                    <td class = "secondCol">{{curClose}}</td>
                                 </tr>
                                 <tr>
                                     <td class = "firstCol">Day's Range</td>
-                                    <td class = "secondCol">73.31 - 73.97</td>
+                                    <td class = "secondCol">{{curRange}}</td>
                                 </tr>
                                 <tr>
                                     <td class = "firstCol">Volume</td>
-                                    <td class = "secondCol">10,814,063</td>
+                                    <td class = "secondCol">{{curVolume}}</td>
                                 </tr>
                             </table>
                         </div>
@@ -161,7 +161,7 @@
                                     <chart [options]="CCIChartOptions"></chart>
                                 </div>
                             </div>
-                            
+
                             <div id="indicator_BBANDS" class="tab-pane fade">
                                 <div class="detail_wrapper">
                                     <chart [options]="BBANDSChartOptions"></chart>

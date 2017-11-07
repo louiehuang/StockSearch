@@ -26,6 +26,8 @@ export class AppComponent {
   symbolName = "AAPL";
   searchResult: Object;
 
+  lastPrice; changePercent; timestamp; curOpen; curClose; curRange; curVolume;
+
   priceChartOptions: Object;
   SMAChartOptions: Object; EMAChartOptions: Object;
   RSIChartOptions: Object; ADXChartOptions: Object; CCIChartOptions: Object;
@@ -180,33 +182,29 @@ export class AppComponent {
   async onSubmit(value) {
     console.log(value);
     var data = await this.service.queryPrice(value);
-    console.log("service: " + data.json()['Meta Data']['1. Information']);
 
+    var meta_data = data.json()['Meta Data']; 
     var json_series_data = data.json()['Time Series (Daily)']; 
-    var array_date = [];
-    var array_price = [];
-    var array_volume = [];
-    var max_volume = 0;
+    var parseRes = this.chartService.parsePriceData(json_series_data);
 
-    var cnt = 0;
-    for(var key in json_series_data) {
-        if(cnt >= 126)
-            break;
-        array_date.push(key.substring(5).replace(/-/g, "\/"));
-        array_price.push(parseFloat(json_series_data[key]['4. close']));
+    //update table
+    this.symbolName = meta_data['2. Symbol'];
+    var timeZone = meta_data['5. Time Zone'];
 
-        var volume = parseFloat(json_series_data[key]['5. volume']);
-        array_volume.push(volume);
-        max_volume = Math.max(max_volume, volume);
-        cnt++;
-    }
+    // console.log(Object.keys(json_series_data)[0]);
+    //cur day (key) is Object.keys(json_series_data)[0]
+    var curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
+    var prevObj = json_series_data[Object.keys(json_series_data)[1]]; //previous day
+    this.curOpen = parseFloat(curObj['1. open']).toFixed(2);
+    this.curClose = parseFloat(curObj['4. close']).toFixed(2);
+    this.curRange = parseFloat(curObj['3. low']).toFixed(2) + ' - ' + parseFloat(curObj['2. high']).toFixed(2);
+    this.curVolume = curObj['5. volume'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");;
 
-    max_volume *= 1.5;
-    //remember to reverse
-    array_date.reverse();
-    array_price.reverse();
-    array_volume.reverse();
+    this.lastPrice = parseFloat(prevObj['4. close']).toFixed(2);
+    var change = this.curClose - this.lastPrice;
 
+
+    //draw price chart
     this.priceChartOptions = {
       chart: {
         zoomType: 'x',
@@ -220,7 +218,7 @@ export class AppComponent {
           text:"<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
       },
       xAxis: {
-        categories: array_date,
+        categories: parseRes.date,
         tickPositioner: function() {
             let res = [];
             for(let i = 0; i < this.categories.length; i++) {
@@ -244,7 +242,7 @@ export class AppComponent {
             text:'Volume'
           },
           opposite:true,
-          max: max_volume
+          max: parseRes.max_volume
         }
       ],
       plotOptions: {
@@ -261,7 +259,7 @@ export class AppComponent {
         {
           type: 'area',
           name: 'Pirce',
-          data: array_price, //data
+          data: parseRes.price, //data
           yAxis:0,
           tooltip:{
             pointFormat: value + ': {point.y:,..2f}'
@@ -273,12 +271,11 @@ export class AppComponent {
         {
           type: 'column',
           name: 'Volume',
-          data: array_volume,
+          data: parseRes.volume,
           yAxis:1,
           color: 'red'
         }
       ]
     };
   }
-
 }

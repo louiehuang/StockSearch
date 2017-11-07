@@ -8,6 +8,38 @@ export class ChartsService {
         
     }
 
+
+    /**
+     * parse prive & volume data
+     * @param jsonObj 
+     */
+    parsePriceData(jsonObj){
+        var array_date = [], array_price = [], array_volume = [];
+        var max_volume = 0, cnt = 0;
+        for(var key in jsonObj) {
+            if(cnt >= 126)
+                break;
+            array_date.push(key.substring(5).replace(/-/g, "\/"));
+            array_price.push(parseFloat(jsonObj[key]['4. close']));
+            var volume = parseFloat(jsonObj[key]['5. volume']);
+            array_volume.push(volume);
+            max_volume = Math.max(max_volume, volume);
+            cnt++;
+        }
+    
+        max_volume *= 1.5;
+        
+        //remember to reverse
+        return {
+            date: array_date.reverse(),
+            price: array_price.reverse(),
+            volume: array_volume.reverse(),
+            max_volume: max_volume
+        };
+    }
+
+
+
     /**
      * Parse indicator with only one target, such as "SMA"
      * @param jsonObj
