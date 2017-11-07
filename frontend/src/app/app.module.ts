@@ -13,6 +13,8 @@ import { HttpModule } from '@angular/http';
 import { ChartModule } from 'angular2-highcharts';
 import { HighchartsStatic } from 'angular2-highcharts/dist/HighchartsService';
 
+import { HttpClientModule } from '@angular/common/http';
+
 declare var require: any;
 
 @NgModule({
@@ -23,7 +25,8 @@ declare var require: any;
     BrowserModule, NgbModule,
     FormsModule, ReactiveFormsModule, MatAutocompleteModule,
     HttpModule,
-    ChartModule.forRoot(require('highcharts'), require('highcharts/modules/exporting'))
+    ChartModule.forRoot(require('highcharts'), require('highcharts/modules/exporting')),
+    HttpClientModule
   ],
   providers: [AppService, ChartsService],
   bootstrap: [AppComponent]

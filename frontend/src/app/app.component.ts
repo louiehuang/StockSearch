@@ -9,6 +9,10 @@ import 'rxjs/add/operator/map';
 
 import { configs } from './configs';
 
+
+import { HttpClient } from '@angular/common/http';
+import { forkJoin } from "rxjs/observable/forkJoin";
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -27,7 +31,7 @@ export class AppComponent {
 
   arr = ["SMA", "EMA", "STOCH"];
 
-  constructor(private service: AppService){ 
+  constructor(private service: AppService, private http: HttpClient){ 
     this.symbol.valueChanges
     .debounceTime(150)
     .subscribe(data => {
@@ -49,8 +53,7 @@ export class AppComponent {
 
   ngOnInit(){ 
     this.onSubmit('AAPL');
-    // configs[1]['series'][0]['data'] = [9,2,3,4,5];
-    // this.EMAChartOptions = configs[1];
+
     this.drawSingleLineChart('AAPL');
   }
 
@@ -75,26 +78,41 @@ export class AppComponent {
 
   
   async drawSingleLineChart(symbol){
-    var dataSMA = await this.service.queryIndicator(symbol, 'SMA');
-    var dataEMA = await this.service.queryIndicator(symbol, 'EMA');
-    var dataSTOCH = await this.service.queryIndicator(symbol, 'STOCH');
-
+    // let SMAURL = this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA');
+    // let EMAURL = this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=EMA');
+    // let STOCHURL = this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=STOCH');
+    // var dataSMA, dataEMA, dataSTOCH;
+    // forkJoin([SMAURL, EMAURL, STOCHURL]).subscribe(results => {
+    //   dataSMA = results[0]
+    //   console.log(dataSMA);
+    //   dataEMA = results[1];
+    //   console.log(dataEMA);
+    //   dataSTOCH = results[2];
+    //   console.log(dataSTOCH);
+    // });
 
     /***** SMA *****/
-    var SMA_data = dataSMA.json()['Technical Analysis: SMA']; //full size data
-    var parseRes = this.parseSingleTarget(SMA_data, 'SMA');
-    // configs[0]['title']['text'] = 'SMA';
-    configs[0]['xAxis']['categories'] = parseRes.date;
-    configs[0]['series'][0]['data'] = parseRes.indicator;
-    this.SMAChartOptions = configs[0];
+    this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA').subscribe(dataSMA => {
+      console.log(dataSMA);
+      var SMA_data = dataSMA['Technical Analysis: SMA']; //full size data
+      var parseRes = this.parseSingleTarget(SMA_data, 'SMA');
+      // configs[0]['title']['text'] = 'SMA';
+      configs[0]['xAxis']['categories'] = parseRes.date;
+      configs[0]['series'][0]['data'] = parseRes.indicator;
+      this.SMAChartOptions = configs[0];
+    });
     /***** SMA *****/
+
 
     /***** EMA *****/
-    var EMA_data = dataEMA.json()['Technical Analysis: EMA']; //full size data
-    var parseRes = this.parseSingleTarget(EMA_data, 'EMA');
-    configs[1]['xAxis']['categories'] = parseRes.date;
-    configs[1]['series'][0]['data'] = parseRes.indicator;
-    this.EMAChartOptions = configs[1];
+    this.http.get('http://localhost:12345/?type=indicator&symbol=AAPL&indicator=EMA').subscribe(dataEMA => {
+      console.log(dataEMA);
+      var EMA_data = dataEMA['Technical Analysis: EMA']; //full size data
+      var parseRes = this.parseSingleTarget(EMA_data, 'EMA');
+      configs[1]['xAxis']['categories'] = parseRes.date;
+      configs[1]['series'][0]['data'] = parseRes.indicator;
+      this.EMAChartOptions = configs[1];
+    });
     /***** EMA *****/
 
     // configs[0]['title']['text'] = 'EMA';
