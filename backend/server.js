@@ -20,14 +20,19 @@ http.createServer((req, res) => {
     if(queryType === "autocomplete"){
         queryFullSymbolName(symbol, res);
     }else if(queryType === "price"){
+        
         queryStockPrice(symbol, res);
+
+        // locallyQueryStockPrice(symbol, res);
+
     }else if(queryType === "indicator"){
         var indicator = q.indicator;
         console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
         
-        // querySingleIndicator(symbol, indicator, res);
+        querySingleIndicator(symbol, indicator, res);
 
-        locallyQuerySingleIndicator(symbol, indicator, res); //local test
+        // locallyQuerySingleIndicator(symbol, indicator, res); //local test
+
     }
 
 }).listen(12345);
@@ -70,6 +75,38 @@ function queryFullSymbolName(symbol, res){
  * @param {*} res 
  */
 function queryStockPrice(symbol, res){
+    //https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=MSFT&outputsize=full&apikey=KAGMK7YPZKV0EYYA"
+    var baseURL = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=";
+    var queryUrl = baseURL + symbol + "&outputsize=full&apikey=KAGMK7YPZKV0EYYA";
+    console.log(queryUrl);
+    
+    https.get(queryUrl, (resp) => {
+        let data = '';
+        // A chunk of data has been recieved.
+        resp.on('data', (chunk) => {
+            data += chunk;
+        });
+        // The whole response has been received.
+        resp.on('end', () => {
+            // console.log(JSON.parse(data).explanation);
+            jsonObject = JSON.parse(data);
+            // console.log(jsonObject);
+            result = JSON.stringify(jsonObject);
+            res.writeHead(200, {"Content-Type": "text/json"});
+            res.write(result);
+            res.end();
+        });
+    }).on("error", (err) => {
+        console.log("Error: " + err.message);
+    });
+}
+
+/**
+ * query stock price and volume
+ * @param {*} symbol 
+ * @param {*} res 
+ */
+function locallyQueryStockPrice(symbol, res){
     var fs = require('fs');
     var data = JSON.parse(fs.readFileSync("stockDetails/" + symbol + ".json"));
     result = JSON.stringify(data);
@@ -78,7 +115,6 @@ function queryStockPrice(symbol, res){
     res.end();
 }
 
-
 /**
  * client call this function to query indicators
  * @param {*} symbol 
@@ -86,13 +122,14 @@ function queryStockPrice(symbol, res){
  * @param {*} res 
  */
 function querySingleIndicator(symbol, indicator, res){
-    //https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=15min&outputsize=full&apikey=KAGMK7YPZKV0EYYA
+    //https://www.alphavantage.co/query?function=SMA&symbol=AAPL&interval=15min&time_period=10&series_type=close&&apikey=KAGMK7YPZKV0EYYA
     const request = require('request-promise');
     let urls = [];
     let baseURL = "https://www.alphavantage.co/query?function=";
 
     let indicatorURL = baseURL + indicator + "&symbol=" +  symbol +
-    "&interval=15min&time_period=10&series_type=close&&apikey=KAGMK7YPZKV0EYYA";
+    "&interval=daily&time_period=10&series_type=close&&apikey=KAGMK7YPZKV0EYYA";
+    console.log(indicatorURL);
     
     https.get(indicatorURL, (resp) => {
         let data = '';
@@ -105,7 +142,7 @@ function querySingleIndicator(symbol, indicator, res){
             // console.log(JSON.parse(data).explanation);
             try {
                 jsonObject = JSON.parse(data);
-                console.log(jsonObject);
+                // console.log(jsonObject);
                 result = JSON.stringify(jsonObject);
                 res.writeHead(200, {"Content-Type": "text/json"});
                 res.write(result);

@@ -9,10 +9,8 @@ import 'rxjs/add/operator/debounceTime';
 import 'rxjs/add/operator/map';
 
 import { configs } from './configs';
-
-
 import { HttpClient } from '@angular/common/http';
-import { forkJoin } from "rxjs/observable/forkJoin";
+
 
 @Component({
   selector: 'app-root',
@@ -27,6 +25,8 @@ export class AppComponent {
   symbolName = "AAPL"; //this value don't change when typing search input
   searchResult: Object;
 
+  priceJson: Object;
+
   lastPrice; changeNum; changePercent; changeToColor; changeToImg;
   timestamp; curOpen; curClose; curRange; curVolume; 
 
@@ -34,6 +34,8 @@ export class AppComponent {
   SMAChartOptions: Object; EMAChartOptions: Object;
   RSIChartOptions: Object; ADXChartOptions: Object; CCIChartOptions: Object;
   STOCHChartOptions: Object; BBANDSChartOptions: Object; MACDChartOptions: Object;
+
+  StockChartOptions: Object;
 
   constructor(private service: AppService, private chartService: ChartsService, private http: HttpClient){ 
     this.symbol.valueChanges
@@ -54,36 +56,43 @@ export class AppComponent {
 
 
   ngOnInit(){ 
+    //drawLineCharts and draw stock chart in onSubmit()
     this.onSubmit('AAPL');
-    this.drawLineCharts('AAPL');
   }
 
 
 
+  ngOnChanges(){
+
+  }
 
   /**
    * Draw all indicator charts
    * @param symbol 
    */
   drawLineCharts(symbol){
+    console.log("draw line: " + symbol);
     var indexMap = [];
     indexMap['Price'] = 0; //for price chart
     indexMap['SMA'] = 1; indexMap['EMA'] = 2; indexMap['STOCH'] = 3; indexMap['RSI'] = 4;
     indexMap['ADX'] = 5; indexMap['CCI'] = 6; indexMap['BBANDS'] = 7; indexMap['MACD'] = 8;
     
-    /***** Single Line *****/
-    this.drawSingleLineChart(indexMap, symbol, 'SMA');
-    this.drawSingleLineChart(indexMap, symbol, 'EMA');
-    this.drawSingleLineChart(indexMap, symbol, 'RSI');
-    this.drawSingleLineChart(indexMap, symbol, 'ADX');
-    this.drawSingleLineChart(indexMap, symbol, 'CCI');
-    /***** Single Line*****/
 
-    /***** Mutiple Lines *****/
-    this.drawMultipleLineChart(indexMap, symbol, 'STOCH', 'SlowD', 'SlowK', ''); //Two
-    this.drawMultipleLineChart(indexMap, symbol, 'BBANDS', 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'); //Three
-    this.drawMultipleLineChart(indexMap, symbol, 'MACD', 'MACD_Signal', 'MACD', 'MACD_Hist'); //Three
-    /***** Mutiple Lines *****/
+    this.drawSingleLineChart(indexMap, symbol, 'SMA');
+
+    // /***** Single Line *****/
+    // this.drawSingleLineChart(indexMap, symbol, 'SMA');
+    // this.drawSingleLineChart(indexMap, symbol, 'EMA');
+    // this.drawSingleLineChart(indexMap, symbol, 'RSI');
+    // this.drawSingleLineChart(indexMap, symbol, 'ADX');
+    // this.drawSingleLineChart(indexMap, symbol, 'CCI');
+    // /***** Single Line*****/
+
+    // /***** Mutiple Lines *****/
+    // this.drawMultipleLineChart(indexMap, symbol, 'STOCH', 'SlowD', 'SlowK', ''); //Two
+    // this.drawMultipleLineChart(indexMap, symbol, 'BBANDS', 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'); //Three
+    // this.drawMultipleLineChart(indexMap, symbol, 'MACD', 'MACD_Signal', 'MACD', 'MACD_Hist'); //Three
+    // /***** Mutiple Lines *****/
   }
 
   /**
@@ -94,6 +103,7 @@ export class AppComponent {
    */
   drawSingleLineChart(indexMap, symbol, indicator){
     var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    console.log("drawSingleLineChart: " + baseURL + '&indicator=' + indicator);
     this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
       console.log(data);
       var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
@@ -182,106 +192,168 @@ export class AppComponent {
    * @param value 
    */
   async onSubmit(value) {
-    console.log(value);
-    var data = await this.service.queryPrice(value);
+    // var data = await this.service.queryPrice(value);
+    var baseURL = 'http://localhost:12345/?type=price&symbol=';
+    console.log("onSubmit: " + baseURL + value);
 
-    var meta_data = data.json()['Meta Data']; 
-    var json_series_data = data.json()['Time Series (Daily)']; 
-    var parseRes = this.chartService.parsePriceData(json_series_data);
-
-    //update table
-    this.symbolName = meta_data['2. Symbol'];
-    var timeZone = meta_data['5. Time Zone'];
-
-    // console.log(Object.keys(json_series_data)[0]);
-    //cur day (key) is Object.keys(json_series_data)[0]
-    var curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
-    var prevObj = json_series_data[Object.keys(json_series_data)[1]]; //previous day
-    this.curOpen = parseFloat(curObj['1. open']).toFixed(2);
-    this.curClose = parseFloat(curObj['4. close']).toFixed(2);
-    this.curRange = parseFloat(curObj['3. low']).toFixed(2) + ' - ' + parseFloat(curObj['2. high']).toFixed(2);
-    this.curVolume = curObj['5. volume'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");;
-
-    this.lastPrice = parseFloat(prevObj['4. close']).toFixed(2);
-    
-    this.changeNum = (this.curClose - this.lastPrice).toFixed(2);
-    // console.log(((this.changeNum / this.lastPrice) * 100).toFixed(2));
-
-    this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2) + "%";
-    // this.changeNum = -0.2; //test negative change
-
-    //draw price chart
-    this.priceChartOptions = {
-      chart: {
-        zoomType: 'x',
-        width: null
-      },
-      title: {
-          text: value + ' Stock Price and Volume'
-      },
-      subtitle: {
-          useHTML:true,
-          text:"<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
-      },
-      xAxis: {
-        categories: parseRes.date,
-        tickPositioner: function() {
-            let res = [];
-            for(let i = 0; i < this.categories.length; i++) {
-                if(i % 10 == 0) 
-                    res.push(this.categories.length - 1 - i);
-            }
-            return res;
-        }
-      },
-      yAxis: [
-        {
-          title: {
-            text: 'Stock Price'
-          },
-          labels:{
-            format:'{value:,.2f}'
-          },
+    this.http.get(baseURL + value).subscribe(data => {
+      var meta_data = data['Meta Data']; 
+      var json_series_data = data['Time Series (Daily)']; 
+      var parseRes = this.chartService.parsePriceData(json_series_data);
+  
+      //update table
+      this.symbolName = value;
+      console.log("onSubmit: " + this.symbolName);
+      var timeZone = meta_data['5. Time Zone'];
+  
+      // console.log(Object.keys(json_series_data)[0]);
+      //cur day (key) is Object.keys(json_series_data)[0]
+      var curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
+      var prevObj = json_series_data[Object.keys(json_series_data)[1]]; //previous day
+      this.curOpen = parseFloat(curObj['1. open']).toFixed(2);
+      this.curClose = parseFloat(curObj['4. close']).toFixed(2);
+      this.curRange = parseFloat(curObj['3. low']).toFixed(2) + ' - ' + parseFloat(curObj['2. high']).toFixed(2);
+      this.curVolume = curObj['5. volume'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");;
+  
+      this.lastPrice = parseFloat(prevObj['4. close']).toFixed(2);
+      
+      this.changeNum = (this.curClose - this.lastPrice).toFixed(2);
+      // console.log(((this.changeNum / this.lastPrice) * 100).toFixed(2));
+  
+      this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2) + "%";
+      // this.changeNum = -0.2; //test negative change
+  
+      //draw price chart
+      this.priceChartOptions = {
+        chart: {
+          zoomType: 'x',
+          width: null
         },
-        {
-          title:{
-            text:'Volume'
+        title: {
+            text: value + ' Stock Price and Volume'
+        },
+        subtitle: {
+            useHTML:true,
+            text:"<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+        },
+        xAxis: {
+          categories: parseRes.date,
+          tickPositioner: function() {
+              let res = [];
+              for(let i = 0; i < this.categories.length; i++) {
+                  if(i % 10 == 0) 
+                      res.push(this.categories.length - 1 - i);
+              }
+              return res;
+          }
+        },
+        yAxis: [
+          {
+            title: {
+              text: 'Stock Price'
+            },
+            labels:{
+              format:'{value:,.2f}'
+            },
           },
-          opposite:true,
-          max: parseRes.max_volume
-        }
-      ],
-      plotOptions: {
-        area: {
-          lineWidth: 2,
-          states: {
-            hover: {
-              lineWidth: 2
+          {
+            title:{
+              text:'Volume'
+            },
+            opposite:true,
+            max: parseRes.max_volume
+          }
+        ],
+        plotOptions: {
+          area: {
+            lineWidth: 2,
+            states: {
+              hover: {
+                lineWidth: 2
+              }
             }
           }
-        }
-      },
-      series: [
-        {
-          type: 'area',
-          name: 'Pirce',
-          data: parseRes.price, //data
-          yAxis:0,
-          tooltip:{
-            pointFormat: value + ': {point.y:,..2f}'
-          },
-          marker:{
-              enabled:false
-          },
         },
-        {
-          type: 'column',
-          name: 'Volume',
-          data: parseRes.volume,
-          yAxis:1,
-          color: 'red'
-        }
-      ]
-    };
+        series: [
+          {
+            type: 'area',
+            name: 'Pirce',
+            data: parseRes.price, //data
+            yAxis:0,
+            tooltip:{
+              pointFormat: value + ': {point.y:,..2f}'
+            },
+            marker:{
+                enabled:false
+            },
+          },
+          {
+            type: 'column',
+            name: 'Volume',
+            data: parseRes.volume,
+            yAxis:1,
+            color: 'red'
+          }
+        ]
+      };
+
+      this.createStockChart(json_series_data);
+    });
+
+    this.drawLineCharts(value);
   }
+
+
+
+  
+  createStockChart(data){
+    //[[1383202800000, 35.405], [1383289200000, 35.525], ... [1508396400000, 77.91]]
+    //1000 elements
+    var parseRes = this.chartService.parseStockData(data);
+
+    this.StockChartOptions = {
+      chart: {
+        height: 400
+    },
+    title: {
+        text: this.symbolName + ' Stock Value'
+    },
+    subtitle: {
+        useHTML:true,
+        text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+    },
+    rangeSelector: {
+        selected: 1
+    },
+    series: [{
+        name: this.symbolName + ' Stock Price',
+        data: parseRes,
+        type: 'area',
+        threshold: null,
+        tooltip: {
+            valueDecimals: 2
+        }
+    }],
+    responsive: {
+        rules: [{
+            condition: {
+                maxWidth: 500
+            },
+            chartOptions: {
+                chart: {
+                    height: 300
+                },
+                subtitle: {
+                    text: null
+                },
+                navigator: {
+                    enabled: false
+                }
+            }
+        }]
+      }
+    }
+
+  }
+
 }

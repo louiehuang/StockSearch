@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import 'rxjs/add/operator/toPromise';
+import * as moment from 'moment';
 
 @Injectable()
 export class ChartsService {
     constructor(private http : Http){
         
     }
-
 
     /**
      * parse prive & volume data
@@ -37,6 +37,8 @@ export class ChartsService {
             max_volume: max_volume
         };
     }
+
+
 
 
 
@@ -108,5 +110,33 @@ export class ChartsService {
     }
   
 
+
+    parseStockData(jsonObj){
+        // var ts = moment("2013-10-31", "YYYY-MM-DD").valueOf();
+        // var m = moment(ts);
+        // var s = m.format("MM/DD/YYYY");
+        // console.log("Values are: ts = " + ts + ", s = " + s);
+
+        var cnt = 0, combinedData = [] //[[ms, price], [ms, price], [ms, price]... [ms, price]]
+        var array_date = [], array_price = [];
+        for(var key in jsonObj) {
+            if(cnt++ >= 1000)
+                break;
+            var date = moment(key, "YYYY-MM-DD").valueOf(); //key = "2017-10-19"
+            array_date.push(date);
+            array_price.push(parseFloat(jsonObj[key]['4. close']));
+        }
+        array_date.reverse();
+        array_price.reverse();
+
+        var ret = [];
+        for(var i = 0; i < array_date.length; i++){
+            var tmp = [];
+            tmp.push(array_date[i]); tmp.push(array_price[i]);
+            ret.push(tmp);
+        }
+
+        return ret;
+    }
 
 }
