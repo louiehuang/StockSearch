@@ -57,14 +57,10 @@ export class AppComponent {
 
   ngOnInit(){ 
     //drawLineCharts and draw stock chart in onSubmit()
-    this.onSubmit('AAPL');
+    this.onSubmit('AAPL'); //test
   }
 
 
-
-  ngOnChanges(){
-
-  }
 
   /**
    * Draw all indicator charts
@@ -77,111 +73,21 @@ export class AppComponent {
     indexMap['SMA'] = 1; indexMap['EMA'] = 2; indexMap['STOCH'] = 3; indexMap['RSI'] = 4;
     indexMap['ADX'] = 5; indexMap['CCI'] = 6; indexMap['BBANDS'] = 7; indexMap['MACD'] = 8;
     
-
+    /***** Single Line *****/
     this.drawSingleLineChart(indexMap, symbol, 'SMA');
+    this.drawSingleLineChart(indexMap, symbol, 'EMA');
+    this.drawSingleLineChart(indexMap, symbol, 'RSI');
+    this.drawSingleLineChart(indexMap, symbol, 'ADX');
+    this.drawSingleLineChart(indexMap, symbol, 'CCI');
+    /***** Single Line*****/
 
-    // /***** Single Line *****/
-    // this.drawSingleLineChart(indexMap, symbol, 'SMA');
-    // this.drawSingleLineChart(indexMap, symbol, 'EMA');
-    // this.drawSingleLineChart(indexMap, symbol, 'RSI');
-    // this.drawSingleLineChart(indexMap, symbol, 'ADX');
-    // this.drawSingleLineChart(indexMap, symbol, 'CCI');
-    // /***** Single Line*****/
-
-    // /***** Mutiple Lines *****/
-    // this.drawMultipleLineChart(indexMap, symbol, 'STOCH', 'SlowD', 'SlowK', ''); //Two
-    // this.drawMultipleLineChart(indexMap, symbol, 'BBANDS', 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'); //Three
-    // this.drawMultipleLineChart(indexMap, symbol, 'MACD', 'MACD_Signal', 'MACD', 'MACD_Hist'); //Three
-    // /***** Mutiple Lines *****/
+    /***** Mutiple Lines *****/
+    this.drawMultipleLineChart(indexMap, symbol, 'STOCH', 'SlowD', 'SlowK', ''); //Two
+    this.drawMultipleLineChart(indexMap, symbol, 'BBANDS', 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'); //Three
+    this.drawMultipleLineChart(indexMap, symbol, 'MACD', 'MACD_Signal', 'MACD', 'MACD_Hist'); //Three
+    /***** Mutiple Lines *****/
   }
 
-  /**
-   * drwa a single line chart
-   * @param indexMap 
-   * @param symbol 
-   * @param indicator 
-   */
-  drawSingleLineChart(indexMap, symbol, indicator){
-    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
-    console.log("drawSingleLineChart: " + baseURL + '&indicator=' + indicator);
-    this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
-      console.log(data);
-      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
-      var parseRes = this.chartService.parseSingleTarget(indicator_data, indicator);
-
-      configs[indexMap[indicator]]['xAxis']['categories'] = parseRes.date;
-      configs[indexMap[indicator]]['series'][0]['name'] = symbol + ' ' + indicator;
-      configs[indexMap[indicator]]['series'][0]['data'] = parseRes.indicator;
-      switch(indexMap[indicator]){
-        case 1:{ this.SMAChartOptions = configs[indexMap[indicator]]; break; } 
-        case 2:{ this.EMAChartOptions = configs[indexMap[indicator]]; break; }
-        case 4:{ this.RSIChartOptions = configs[indexMap[indicator]]; break; }
-        case 5:{ this.ADXChartOptions = configs[indexMap[indicator]]; break; }
-        case 6:{ this.CCIChartOptions = configs[indexMap[indicator]]; break; }
-      }
-    });
-  }
-
-
-  /**
-   * draw chart with two lines (two targets)
-   * @param indexMap 
-   * @param symbol 
-   * @param indicator 
-   * @param target1 
-   * @param target2 
-   */
-  drawTwoLineChart(indexMap, symbol, indicator, target1, target2){
-    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
-    this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
-      console.log(data);
-      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
-      var parseRes = this.chartService.parseTwoTarget(indicator_data, target1, target2); //SlowD, SlowK
-
-      configs[indexMap[indicator]]['xAxis']['categories'] = parseRes.date;
-      configs[indexMap[indicator]]['series'][0]['name'] = symbol + ' ' + target1;
-      configs[indexMap[indicator]]['series'][0]['data'] = parseRes.indicator_1;
-      configs[indexMap[indicator]]['series'][1]['name'] = symbol + ' ' + target2;
-      configs[indexMap[indicator]]['series'][1]['data'] = parseRes.indicator_2;
-      this.STOCHChartOptions = configs[indexMap[indicator]];
-    });
-  }
-
-  drawMultipleLineChart(indexMap, symbol, indicator, target1, target2, target3){
-    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
-    var isTwoLine = false;
-    if(target3.length == 0)
-      isTwoLine = true;
-
-    this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
-      console.log(data);
-      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
-      var parseRes;
-      if(isTwoLine == true)
-        parseRes = this.chartService.parseTwoTarget(indicator_data, target1, target2); //SlowD, SlowK
-      else 
-        parseRes = this.chartService.parseThreearget(indicator_data, target1, target2, target3); 
-
-      configs[indexMap[indicator]]['xAxis']['categories'] = parseRes.date;
-      configs[indexMap[indicator]]['series'][0]['name'] = symbol + ' ' + target1;
-      configs[indexMap[indicator]]['series'][0]['data'] = parseRes.indicator_1;
-      configs[indexMap[indicator]]['series'][1]['name'] = symbol + ' ' + target2;
-      configs[indexMap[indicator]]['series'][1]['data'] = parseRes.indicator_2;
-
-      if(isTwoLine == false){
-        //three lines
-        configs[indexMap[indicator]]['series'][2]['name'] = symbol + ' ' + target3;
-        configs[indexMap[indicator]]['series'][2]['data'] = parseRes.indicator_3;
-      }
-
-      switch(indexMap[indicator]){
-        case 3:{ this.STOCHChartOptions = configs[indexMap[indicator]]; break; } 
-        case 7:{ this.BBANDSChartOptions = configs[indexMap[indicator]]; break; }
-        case 8:{ this.MACDChartOptions = configs[indexMap[indicator]]; break; }
-      }      
-    });
-  }
-  
 
 
 
@@ -304,8 +210,10 @@ export class AppComponent {
   }
 
 
-
-  
+  /**
+   * draw historical stock chart
+   * @param data 
+   */
   createStockChart(data){
     //[[1383202800000, 35.405], [1383289200000, 35.525], ... [1508396400000, 77.91]]
     //1000 elements
@@ -353,7 +261,151 @@ export class AppComponent {
         }]
       }
     }
-
   }
+
+    /**
+   * drwa a single line chart
+   * @param indexMap 
+   * @param symbol 
+   * @param indicator 
+   */
+  drawSingleLineChart(indexMap, symbol, indicator){
+    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    console.log("drawSingleLineChart: " + baseURL + '&indicator=' + indicator);
+    this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
+      console.log(data);
+      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      var parseRes = this.chartService.parseSingleTarget(indicator_data, indicator);
+      var singleLineCharOption = {
+        chart: { zoomType: 'x' },
+        title: { text: ''  },
+        subtitle: {
+            useHTML:true,
+            text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+        },
+        xAxis: {
+            categories: [],
+            tickPositioner: function() {
+                let res = [];
+                for(let i = 0; i < this.categories.length; i++) 
+                    if(i % 5 == 0) 
+                        res.push(this.categories.length - 1 - i);
+                return res;
+            }
+        },
+        yAxis: {
+            title: { text: '' }
+        },
+        plotOptions: {
+            states: { hover: { lineWidth: 1 } }
+        },
+        series: [{
+            name: '',
+            lineWidth: 1,
+            marker: { enabled: true, symbol:'square', radius: 2 },
+            data: []
+        }]
+      };
+
+      singleLineCharOption['title']['text'] = indicator;
+      singleLineCharOption['yAxis']['title']['text'] = indicator;
+      singleLineCharOption['xAxis']['categories'] = parseRes.date;
+      singleLineCharOption['series'][0]['name'] = symbol + ' ' + indicator;
+      singleLineCharOption['series'][0]['data'] = parseRes.indicator;
+
+      switch(indexMap[indicator]){
+        case 1:{ this.SMAChartOptions = singleLineCharOption; break; } 
+        case 2:{ this.EMAChartOptions = singleLineCharOption; break; }
+        case 4:{ this.RSIChartOptions = singleLineCharOption; break; }
+        case 5:{ this.ADXChartOptions = singleLineCharOption; break; }
+        case 6:{ this.CCIChartOptions = singleLineCharOption; break; }
+      }
+
+    });
+  }
+
+  
+  /**
+   * draw indicator chart with mutiple target
+   * @param indexMap 
+   * @param symbol 
+   * @param indicator 
+   * @param target1 
+   * @param target2 
+   * @param target3 
+   */
+  drawMultipleLineChart(indexMap, symbol, indicator, target1, target2, target3){
+    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    var isTwoLine = false;
+    if(target3.length == 0)
+      isTwoLine = true;
+
+    this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
+      console.log(data);
+      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      var parseRes;
+      if(isTwoLine == true)
+        parseRes = this.chartService.parseTwoTarget(indicator_data, target1, target2); //SlowD, SlowK
+      else 
+        parseRes = this.chartService.parseThreearget(indicator_data, target1, target2, target3); 
+
+      var mutipleLineChartOption = {
+        chart: { zoomType: 'x' },
+        title: { text: '' },
+        subtitle: {
+            useHTML:true,
+            text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+        },
+        xAxis: {
+            categories: [],
+            tickPositioner: function() {
+                let res = [];
+                for(let i = 0; i < this.categories.length; i++)
+                    if(i % 5 == 0) 
+                        res.push(this.categories.length - 1 - i);
+                return res;
+            }
+        },
+        yAxis: {
+            title: { text: '' },
+            marker:{ enabled: true, symbol:'square', radius: 1, },
+        },
+        tooltip: {
+            crosshairs: true,
+            shared: true
+        },
+        series: [{
+            name: '', data: [], lineWidth: 1,
+            marker: { enabled: true, symbol:'square', radius: 2 }
+        },
+        {
+            name: '', data: [], lineWidth: 1,
+            marker: { enabled: true, symbol:'square', radius: 2 }
+        },
+        {
+            name: '', data: [], lineWidth: 1,
+            marker: { enabled: true, symbol:'square', radius: 2 }
+        }]
+      };
+
+      mutipleLineChartOption['xAxis']['categories'] = parseRes.date;
+      mutipleLineChartOption['series'][0]['name'] = symbol + ' ' + target1;
+      mutipleLineChartOption['series'][0]['data'] = parseRes.indicator_1;
+      mutipleLineChartOption['series'][1]['name'] = symbol + ' ' + target2;
+      mutipleLineChartOption['series'][1]['data'] = parseRes.indicator_2;
+
+      if(isTwoLine == false){ //three lines
+        mutipleLineChartOption['series'][2]['name'] = symbol + ' ' + target1;
+        mutipleLineChartOption['series'][2]['data'] = parseRes.indicator_3;
+      }
+
+      switch(indexMap[indicator]){
+        case 3:{ this.STOCHChartOptions = mutipleLineChartOption; break; } 
+        case 7:{ this.BBANDSChartOptions = mutipleLineChartOption; break; }
+        case 8:{ this.MACDChartOptions = mutipleLineChartOption; break; }
+      }      
+    });
+  }
+  
 
 }
