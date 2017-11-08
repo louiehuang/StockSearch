@@ -1,12 +1,7 @@
 var http = require('http');
 var https = require('https');
 var url = require('url');
-
-/*JSON Objects*/
-var I_SMA;
-var I_EMA;
-var I_STOCH;
-var I_RSI;
+var xml2js = require('xml2js');
 
 http.createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -18,21 +13,22 @@ http.createServer((req, res) => {
     var symbol = q.symbol;
 
     if(queryType === "autocomplete"){
+        //http://localhost:12345/?type=autocomplete&symbol=AAPL
         queryFullSymbolName(symbol, res);
     }else if(queryType === "price"){
-        
+        //http://localhost:12345/?type=price&symbol=AAPL
         queryStockPrice(symbol, res);
-
-        // locallyQueryStockPrice(symbol, res);
-
+        // locallyQueryStockPrice(symbol, res); //local test
     }else if(queryType === "indicator"){
+        //http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA
         var indicator = q.indicator;
         console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
         
         querySingleIndicator(symbol, indicator, res);
-
         // locallyQuerySingleIndicator(symbol, indicator, res); //local test
-
+    }else if(queryType === "news"){
+        //http://localhost:12345/?type=news&symbol=AAPL
+        queryNews(symbol, res);
     }
 
 }).listen(12345);
@@ -82,13 +78,10 @@ function queryStockPrice(symbol, res){
     
     https.get(queryUrl, (resp) => {
         let data = '';
-        // A chunk of data has been recieved.
         resp.on('data', (chunk) => {
             data += chunk;
         });
-        // The whole response has been received.
         resp.on('end', () => {
-            // console.log(JSON.parse(data).explanation);
             jsonObject = JSON.parse(data);
             // console.log(jsonObject);
             result = JSON.stringify(jsonObject);
@@ -123,26 +116,19 @@ function locallyQueryStockPrice(symbol, res){
  */
 function querySingleIndicator(symbol, indicator, res){
     //https://www.alphavantage.co/query?function=SMA&symbol=AAPL&interval=15min&time_period=10&series_type=close&&apikey=KAGMK7YPZKV0EYYA
-    const request = require('request-promise');
-    let urls = [];
     let baseURL = "https://www.alphavantage.co/query?function=";
-
     let indicatorURL = baseURL + indicator + "&symbol=" +  symbol +
     "&interval=daily&time_period=10&series_type=close&&apikey=KAGMK7YPZKV0EYYA";
     console.log(indicatorURL);
     
     https.get(indicatorURL, (resp) => {
         let data = '';
-        // A chunk of data has been recieved.
         resp.on('data', (chunk) => {
             data += chunk;
         });
-        // The whole response has been received.
         resp.on('end', () => {
-            // console.log(JSON.parse(data).explanation);
             try {
                 jsonObject = JSON.parse(data);
-                // console.log(jsonObject);
                 result = JSON.stringify(jsonObject);
                 res.writeHead(200, {"Content-Type": "text/json"});
                 res.write(result);
@@ -167,4 +153,46 @@ function locallyQuerySingleIndicator(symbol, indicator, res){
     res.end();
 }
 
+
+
+/**
+ * fetch xml news, then convert to json, send to client
+ * @param {*} symbol 
+ */
+function queryNews(symbol, res){
+    //https://seekingalpha.com/api/sa/combined/AAPL.xml
+    let baseURL = "https://seekingalpha.com/api/sa/combined/";
+    let newURL = baseURL + symbol + ".xml";
+    console.log(newURL);
+    
+    https.get(newURL, (resp) => {
+        let xmlData = '';
+        resp.on('data', (chunk) => {
+            xmlData += chunk;
+        });
+        resp.on('end', () => {
+            try {
+                //xmlData is xml object now, convert is to json
+                // console.log(xmlData);
+                var parser = new xml2js.Parser();
+                var jsonObject;
+                parser.parseString(xmlData, (err, result) => {
+                    jsonObject = result;
+                });
+
+                var newsJson = jsonObject['rss']['channel'][0]['item']
+                console.log(newsJson.length);
+                jsonString = JSON.stringify(newsJson);
+                res.writeHead(200, {"Content-Type": "text/json"});
+                res.write(jsonString);
+                res.end();
+            } catch (error) {
+                console.log("parse Error: " + error);
+            }
+        });
+    }).on("error", (err) => {
+        console.log("Error: " + err.message);
+    });
+
+}
 

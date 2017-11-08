@@ -30,12 +30,17 @@ export class AppComponent {
   lastPrice; changeNum; changePercent; changeToColor; changeToImg;
   timestamp; curOpen; curClose; curRange; curVolume; 
 
+  //chart
   priceChartOptions: Object;
   SMAChartOptions: Object; EMAChartOptions: Object;
   RSIChartOptions: Object; ADXChartOptions: Object; CCIChartOptions: Object;
   STOCHChartOptions: Object; BBANDSChartOptions: Object; MACDChartOptions: Object;
 
+  //stock
   StockChartOptions: Object;
+
+  //news
+  newsArray = [];
 
   constructor(private service: AppService, private chartService: ChartsService, private http: HttpClient){ 
     this.symbol.valueChanges
@@ -89,8 +94,6 @@ export class AppComponent {
   }
 
 
-
-
   /**
    * query:
    * (1) price & volume data
@@ -131,54 +134,35 @@ export class AppComponent {
   
       //draw price chart
       this.priceChartOptions = {
-        chart: {
-          zoomType: 'x',
-          width: null
-        },
-        title: {
-            text: value + ' Stock Price and Volume'
-        },
+        chart: { zoomType: 'x', width: null },
+        title: { text: value + ' Stock Price and Volume' },
         subtitle: {
             useHTML:true,
-            text:"<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+            text:"<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
         },
         xAxis: {
           categories: parseRes.date,
           tickPositioner: function() {
               let res = [];
-              for(let i = 0; i < this.categories.length; i++) {
+              for(let i = 0; i < this.categories.length; i++)
                   if(i % 10 == 0) 
                       res.push(this.categories.length - 1 - i);
-              }
               return res;
           }
         },
         yAxis: [
           {
-            title: {
-              text: 'Stock Price'
-            },
-            labels:{
-              format:'{value:,.2f}'
-            },
+            title: { text: 'Stock Price' },
+            labels:{ format:'{value:,.2f}' },
           },
           {
-            title:{
-              text:'Volume'
-            },
+            title:{ text:'Volume' },
             opposite:true,
             max: parseRes.max_volume
           }
         ],
         plotOptions: {
-          area: {
-            lineWidth: 2,
-            states: {
-              hover: {
-                lineWidth: 2
-              }
-            }
-          }
+          area: { lineWidth: 2, states: { hover: { lineWidth: 2 } } }
         },
         series: [
           {
@@ -186,12 +170,8 @@ export class AppComponent {
             name: 'Pirce',
             data: parseRes.price, //data
             yAxis:0,
-            tooltip:{
-              pointFormat: value + ': {point.y:,..2f}'
-            },
-            marker:{
-                enabled:false
-            },
+            tooltip:{ pointFormat: value + ': {point.y:,..2f}' },
+            marker:{ enabled:false },
           },
           {
             type: 'column',
@@ -207,7 +187,26 @@ export class AppComponent {
     });
 
     this.drawLineCharts(value);
+
+    this.createNewArray(value);
   }
+
+  createNewArray(symbol){
+    var baseURL = 'http://localhost:12345/?type=news&symbol=';
+    console.log("createNewArray: " + baseURL + symbol);
+
+    this.http.get(baseURL + symbol).subscribe(data => {
+      //parse, get 5 news and convert news link if needed
+      var limit = 5;
+      this.newsArray = this.chartService.parseNew(data, limit); //jsonObj
+
+      console.log(this.newsArray);
+    });
+
+  }
+
+
+
 
 
   /**
@@ -228,7 +227,7 @@ export class AppComponent {
     },
     subtitle: {
         useHTML:true,
-        text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+        text: "<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
     },
     rangeSelector: {
         selected: 1
@@ -263,7 +262,7 @@ export class AppComponent {
     }
   }
 
-    /**
+  /**
    * drwa a single line chart
    * @param indexMap 
    * @param symbol 
@@ -281,7 +280,7 @@ export class AppComponent {
         title: { text: ''  },
         subtitle: {
             useHTML:true,
-            text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+            text: "<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
         },
         xAxis: {
             categories: [],
@@ -354,7 +353,7 @@ export class AppComponent {
         title: { text: '' },
         subtitle: {
             useHTML:true,
-            text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+            text: "<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
         },
         xAxis: {
             categories: [],
@@ -381,10 +380,6 @@ export class AppComponent {
         {
             name: '', data: [], lineWidth: 1,
             marker: { enabled: true, symbol:'square', radius: 2 }
-        },
-        {
-            name: '', data: [], lineWidth: 1,
-            marker: { enabled: true, symbol:'square', radius: 2 }
         }]
       };
 
@@ -395,8 +390,11 @@ export class AppComponent {
       mutipleLineChartOption['series'][1]['data'] = parseRes.indicator_2;
 
       if(isTwoLine == false){ //three lines
-        mutipleLineChartOption['series'][2]['name'] = symbol + ' ' + target1;
-        mutipleLineChartOption['series'][2]['data'] = parseRes.indicator_3;
+        //add a new series
+        var newSeries = {'name':'', 'data':[], 'lineWidth': 1, 'marker': { enabled: true, symbol:'square', radius: 2 }};
+        newSeries['name'] = symbol + ' ' + target3;
+        newSeries['data'] = parseRes.indicator_3;
+        mutipleLineChartOption['series'].push(newSeries);
       }
 
       switch(indexMap[indicator]){

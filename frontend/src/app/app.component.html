@@ -103,7 +103,7 @@
 
                                 <tr>
                                     <td class = "firstCol">Timestamp</td>
-                                    <td class = "secondCol">2017-09-28 16:00:00 EDT</td>
+                                    <td class = "secondCol">2017-11-07 16:16:23 EDT</td>
                                 </tr>
                                 <tr>
                                     <td class = "firstCol">Open</td>
@@ -206,12 +206,23 @@
             </div>
 
 
-
             
             <div id="menu_news" class="tab-pane fade">
-                <h3>Menu 2</h3>
-                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.</p>
-            </div>
+                <div>
+                    <div *ngFor="let news of newsArray" style="margin-top:20px; height: 160px; width: 100%; background-color: #EFEFEF;
+                         padding: 20px 20px">
+                        <table>
+                            <tr style="color:#377BB5; font-size: 20px; height: 50px">
+                                <a target="_blank" href="{{news.link}}">{{news.title}}</a>
+                            </tr>
+                            <tr style="font-weight: bold; height: 35px">Author: {{news['sa:author_name']}}</tr>
+                            <tr style="font-weight: bold; height: 35px">Date: {{news.pubDate}}</tr>
+                        </table>
+                    </div>
+                </div>
+             </div>
+
+
         </div>
     </div>
 

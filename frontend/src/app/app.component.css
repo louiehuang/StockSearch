@@ -35,13 +35,13 @@
 
 .result_tabs{
     margin-top: 15px;
-    height: 650px;
+    padding-bottom: 20px;
     background-color: white;
     border-radius: 10px;
 }
 
 .result_tabs .detail_wrapper{
-    background-color: gray;
+    background-color: white;
 }
 
 

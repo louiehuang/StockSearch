@@ -139,4 +139,34 @@ export class ChartsService {
         return ret;
     }
 
+
+    parseNew(data, limit){
+        var ret = [];
+        //parse
+        for(var i = 0; i < limit; i++){
+            var title = data[i]['title'].toString().trim(); //Microsoft focused on AI investments
+            var guid = data[i]['guid'][0]['_']; 
+
+            guid = guid.toString().substring(guid.length - 7); 
+
+            //https://seekingalpha.com/news/3301685-microsoft-focused-ai-investments
+            //3301685 is in guid, and -microsoft-focused-ai-investments comes from title
+            var link = data[i]['link'].toString(); //in AAPL it's artical link, but in MSFT, it's news index
+
+            console.log(link + ", " + link.indexOf(guid));
+
+            if(link.indexOf(guid) == -1){
+                link = "https://seekingalpha.com/news/" + guid;
+                title = title.toLowerCase().replace(/\s+/gi, "-");
+                link += "-" + title;
+                data[i]['link'] = link;
+            }
+            console.log(link);
+
+            ret.push(data[i]);
+        }
+
+        return ret;
+    }
+
 }
