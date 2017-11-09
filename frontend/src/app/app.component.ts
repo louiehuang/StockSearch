@@ -12,13 +12,10 @@ import { configs } from './configs';
 import { HttpClient } from '@angular/common/http';
 import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
 
-
-import {OrderBy} from "./orderBy";
-import {Pipe, PipeTransform} from '@angular/core';
-
 export class Stock {
+  //addTime is the timestamp that a user add a stock to his favorite list
   constructor(public symbol: string, public price: string, public change: number, 
-    public changePercent: number, public volume: number, public addTime: string) {}
+    public changePercent: number, public volume: number, public addTime: number) {}
 } 
 
 export class Person {
@@ -63,8 +60,8 @@ export class AppComponent {
 
   favoriteList: Stock[]; //fetch from local storage
 
-  orderRule = "+";
-  fullOrdeRule = '+price'; //'-symbol' for ascending, '+symbol' for descending
+  orderKey = 'price';
+  orderRule = false; //reverse 'false' => ascending order, true for descending
 
   symbol : FormControl = new FormControl();
   // searchResult: Observable<any[]>;
@@ -127,24 +124,81 @@ export class AppComponent {
     this.favoriteList = [new Stock('AAPL', '153.28', -0.95, -0.62, 21896592, ""),
         new Stock('MSFT', '73.28', 0.03, -0.62, 11896592, ""),
         new Stock('YHOO', '53.28', 0.15, 0.62, 11896592, "")];
+
+    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
 
-  onSortingKeyChange(detectedValue){
-    this.fullOrdeRule = this.orderRule + detectedValue;
-    this.favoriteList.push(new Stock('AP', '13.28', -0.5, -0.2, 2896592, ""));
-    console.log(this.fullOrdeRule);
+  /**
+   * sorting key changes, eg. sort by symbol, price, volume...
+   * @param value 
+   */
+  onSortingKeyChange(value){
+    this.orderKey = value;
+    // console.log(this.orderKey);
   }
 
+  /**
+   * sorting rule changes, eg. asc or desc
+   * @param value 
+   */
   onSortingRuleChange(value){
     if(value === "ascending"){
-      this.orderRule = "-";
+      this.orderRule = false;
     }else if(value === "descending"){
-      this.orderRule = "+";
+      this.orderRule = true;
     }
-    this.fullOrdeRule = this.orderRule + this.fullOrdeRule.substring(1);
-    console.log(this.fullOrdeRule);
+    // console.log(this.orderRule);
   }
 
+
+  /**
+   * add (or remove) stock to favorite list
+   */
+  addToFavorite(){
+    this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
+    console.log(this.favoriteList);
+    
+    var found = false, index = -1;
+    for(var i = 0; i < this.favoriteList.length; i++) {
+        if (this.favoriteList[i].symbol == this.symbolName) {
+            found = true;
+            index = i;
+            break;
+        }
+    }
+    if(found){
+      //if in favorite List, remove it change ang img to empty-star
+      document.getElementById("btn_fav").className = "glyphicon glyphicon-star-empty";
+      this.removeCurrentStockToFavoriteList(index);
+    }else{
+      //else add to favorite List, and change img to star
+      document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
+      this.addCurrentStockToFavoriteList();
+    }
+
+    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+  }
+
+  /**
+   * remove stock at index
+   * @param index 
+   */
+  removeCurrentStockToFavoriteList(index){
+    this.favoriteList.splice(index, 1);
+    console.log(this.favoriteList);
+  }
+
+  /**
+   * add current stock to favorite list
+   */
+  addCurrentStockToFavoriteList(){
+    var addTime = Date.now();
+    console.log(addTime);
+    this.favoriteList.push(
+      new Stock(this.symbolName, this.lastPrice, this.changeNum, 
+        this.changePercent, this.curVolume, addTime));
+    console.log(this.favoriteList);
+  }
 
 
   /**

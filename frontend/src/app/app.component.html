@@ -89,7 +89,7 @@
                         </div>
                         <div style="float:left; font-weight: bold; margin: 0px 20px">
                             Order 
-                            <select (change)="onSortingRuleChange($event.target.value)"  class="selectpicker">
+                            <select (change)="onSortingRuleChange($event.target.value)" class="selectpicker">
                                 <option value="ascending">Ascending</option>
                                 <option value="descending">Descending</option>
                             </select>   
@@ -106,7 +106,7 @@
                             <th>Volume</th>
                             <th></th>
                         </tr>
-                        <tr *ngFor="let favStock of favoriteList | orderBy : fullOrdeRule">
+                        <tr *ngFor="let favStock of favoriteList | orderBy : orderKey: orderRule">
                             <td>{{favStock.symbol}}</td>
                             <td>{{favStock.price}}</td>
                             <td>{{favStock.change}} ({{favStock.changePercent}}%)</td>
@@ -155,9 +155,9 @@
                                             <img src="http://cs-server.usc.edu:45678/hw/hw8/images/facebook.png" 
                                                 style="width: 25px; height: 25px; margin-top:4px"/>
                                         </div>
-                                        <div class="icon_wrap">
-                                            <span class="glyphicon glyphicon-star-empty"
-                                                style="font-size: 20px; margin-left:5px; margin-top:5px"></span>
+                                        <div class="icon_wrap" (click)="addToFavorite()">
+                                            <span id="btn_fav" class="glyphicon glyphicon-star-empty"
+                                                style="color: #FDD445; font-size: 20px; margin-left:5px; margin-top:5px"></span>
                                         </div>
                                     </div>
                                 </div>

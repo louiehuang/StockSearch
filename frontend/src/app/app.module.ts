@@ -17,13 +17,13 @@ import { HttpClientModule } from '@angular/common/http';
 import { MomentModule } from 'angular2-moment/moment.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import {OrderBy} from "./orderBy";
+import { OrderModule } from 'ngx-order-pipe';
 
 declare var require: any;
 
 @NgModule({
   declarations: [
-    AppComponent, OrderBy
+    AppComponent
   ],
   imports: [
     BrowserModule, NgbModule,
@@ -36,7 +36,8 @@ declare var require: any;
                         ),
     HttpClientModule,
     MomentModule,
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    OrderModule
   ],
   providers: [AppService, ChartsService],
   bootstrap: [AppComponent]

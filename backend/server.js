@@ -17,18 +17,18 @@ http.createServer((req, res) => {
         queryFullSymbolName(symbol, res);
     }else if(queryType === "price"){
         //http://localhost:12345/?type=price&symbol=AAPL
-        queryStockPrice(symbol, res);
-        // locallyQueryStockPrice(symbol, res); //local test
+        // queryStockPrice(symbol, res);
+        locallyQueryStockPrice(symbol, res); //local test
     }else if(queryType === "indicator"){
         //http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA
         var indicator = q.indicator;
         console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
-        
-        querySingleIndicator(symbol, indicator, res);
-        // locallyQuerySingleIndicator(symbol, indicator, res); //local test
+        // querySingleIndicator(symbol, indicator, res);
+        locallyQuerySingleIndicator(symbol, indicator, res); //local test
     }else if(queryType === "news"){
         //http://localhost:12345/?type=news&symbol=AAPL
         queryNews(symbol, res);
+        // locallyQueryNews(symbol, res); //local test
     }
 
 }).listen(12345);
@@ -94,19 +94,6 @@ function queryStockPrice(symbol, res){
     });
 }
 
-/**
- * query stock price and volume
- * @param {*} symbol 
- * @param {*} res 
- */
-function locallyQueryStockPrice(symbol, res){
-    var fs = require('fs');
-    var data = JSON.parse(fs.readFileSync("stockDetails/" + symbol + ".json"));
-    result = JSON.stringify(data);
-    res.writeHead(200, {"Content-Type": "text/json"});
-    res.write(result);
-    res.end();
-}
 
 /**
  * client call this function to query indicators
@@ -144,17 +131,6 @@ function querySingleIndicator(symbol, indicator, res){
 
 
 
-function locallyQuerySingleIndicator(symbol, indicator, res){
-    var fs = require('fs');
-    var data = JSON.parse(fs.readFileSync("stockDetails/" + indicator + ".json"));
-    result = JSON.stringify(data);
-    res.writeHead(200, {"Content-Type": "text/json"});
-    res.write(result);
-    res.end();
-}
-
-
-
 /**
  * fetch xml news, then convert to json, send to client
  * @param {*} symbol 
@@ -180,7 +156,7 @@ function queryNews(symbol, res){
                     jsonObject = result;
                 });
 
-                var newsJson = jsonObject['rss']['channel'][0]['item']
+                var newsJson = jsonObject['rss']['channel'][0]['item'];
                 console.log(newsJson.length);
                 jsonString = JSON.stringify(newsJson);
                 res.writeHead(200, {"Content-Type": "text/json"});
@@ -193,6 +169,55 @@ function queryNews(symbol, res){
     }).on("error", (err) => {
         console.log("Error: " + err.message);
     });
+}
 
+
+
+
+/**
+ * query stock price and volume
+ * @param {*} symbol 
+ * @param {*} res 
+ */
+function locallyQueryStockPrice(symbol, res){
+    var fs = require('fs');
+    var data = JSON.parse(fs.readFileSync("stockDetails/" + symbol + ".json"));
+    result = JSON.stringify(data);
+    res.writeHead(200, {"Content-Type": "text/json"});
+    res.write(result);
+    res.end();
+}
+
+
+function locallyQuerySingleIndicator(symbol, indicator, res){
+    var fs = require('fs');
+    var data = JSON.parse(fs.readFileSync("stockDetails/" + indicator + ".json"));
+    result = JSON.stringify(data);
+    res.writeHead(200, {"Content-Type": "text/json"});
+    res.write(result);
+    res.end();
+}
+
+
+
+function locallyQueryNews(symbol, res){
+    //https://seekingalpha.com/api/sa/combined/AAPL.xml
+
+    var fs = require('fs');
+    var data = JSON.parse(fs.readFileSync("stockDetails/" + symbol + ".xml"));
+    result = JSON.stringify(data);
+
+    var parser = new xml2js.Parser();
+    var jsonObject;
+    parser.parseString(xmlData, (err, result) => {
+        jsonObject = result;
+    });
+
+    var newsJson = jsonObject['rss']['channel'][0]['item'];
+    console.log(newsJson.length);
+    jsonString = JSON.stringify(newsJson);
+    res.writeHead(200, {"Content-Type": "text/json"});
+    res.write(jsonString);
+    res.end();
 }
 
