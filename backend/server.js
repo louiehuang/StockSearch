@@ -17,14 +17,14 @@ http.createServer((req, res) => {
         queryFullSymbolName(symbol, res);
     }else if(queryType === "price"){
         //http://localhost:12345/?type=price&symbol=AAPL
-        // queryStockPrice(symbol, res);
-        locallyQueryStockPrice(symbol, res); //local test
+        queryStockPrice(symbol, res);
+        // locallyQueryStockPrice(symbol, res); //local test
     }else if(queryType === "indicator"){
         //http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA
         var indicator = q.indicator;
         console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
-        // querySingleIndicator(symbol, indicator, res);
-        locallyQuerySingleIndicator(symbol, indicator, res); //local test
+        querySingleIndicator(symbol, indicator, res);
+        // locallyQuerySingleIndicator(symbol, indicator, res); //local test
     }else if(queryType === "news"){
         //http://localhost:12345/?type=news&symbol=AAPL
         queryNews(symbol, res);
@@ -71,7 +71,7 @@ function queryFullSymbolName(symbol, res){
  * @param {*} res 
  */
 function queryStockPrice(symbol, res){
-    //https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=MSFT&outputsize=full&apikey=KAGMK7YPZKV0EYYA"
+    //https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=MSFT&outputsize=full&apikey=KAGMK7YPZKV0EYYA
     var baseURL = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=";
     var queryUrl = baseURL + symbol + "&outputsize=full&apikey=KAGMK7YPZKV0EYYA";
     console.log(queryUrl);

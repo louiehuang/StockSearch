@@ -14,6 +14,8 @@ import { trigger, state, style, transition, animate, keyframes } from '@angular/
 
 import { FacebookService, InitParams, UIParams, UIResponse } from 'ngx-facebook';
 
+declare var $: any;
+
 export class Stock {
   //addTime is the timestamp that a user add a stock to his favorite list
   constructor(public symbol: string, public price: string, public change: number, 
@@ -47,12 +49,15 @@ export class AppComponent {
   state: string;
   inFavoriteList: boolean = true;
   switchDivAnimate(){
-    // if (this.state === 'favList') {
-    //   this.state = 'in';
-    // }
+    // if (this.state === 'favList') { this.state = 'in'; }
     this.state = 'in';
     this.inFavoriteList = !this.inFavoriteList;
   }
+
+  //record whether data has been receievd
+  loadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,
+  'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 
+  'Table': false, 'HighStock': false, 'News': false};
 
   favoriteList: Stock[]; //fetch from local storage
 
@@ -109,7 +114,6 @@ export class AppComponent {
       version: 'v2.11'
     };
     fb.init(initParams);
-
   }
 
 
@@ -126,13 +130,23 @@ export class AppComponent {
   }
 
 
-  // ngAfterViewInit(){
-  //   //if stock user is searching is in his favorite list, change icon
-  //   var favoriteCheckRes = this.isStockInFavoriteList();
-  //   if(favoriteCheckRes.found){
-  //     document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
-  //   }
-  // }
+  /**
+   * if need to get element id, put code here
+   */
+  ngAfterViewInit(){
+    // //if stock user is searching is in his favorite list, change icon
+    // var favoriteCheckRes = this.isStockInFavoriteList();
+    // if(favoriteCheckRes.found){
+    //   document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
+    // }
+
+    $('#refreshSwitch').bootstrapToggle();
+    $('#refreshSwitch').change((event) => {
+      // this.toggleValueChange(event.target.checked);
+      console.log('refresh clicked');
+    });
+
+  }
 
   /**
    * sorting key changes, eg. sort by symbol, price, volume...
@@ -268,6 +282,12 @@ export class AppComponent {
     });
   }
 
+
+  
+  setupRefresh(){
+    console.log('123');
+  }
+
   /**
    * Draw all indicator charts
    * @param symbol 
@@ -301,6 +321,10 @@ export class AppComponent {
     // var data = await this.service.queryPrice(value);
     var baseURL = 'http://localhost:12345/?type=price&symbol=';
     console.log("onSubmit: " + baseURL + value);
+
+    //set to false, wait for loading data
+    this.loadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,'ADX': false,
+    'CCI': false, 'BBANDS': false, 'MACD': false, 'Table': false, 'HighStock': false, 'News': false};
 
     this.http.get(baseURL + value).subscribe(data => {
       var meta_data = data['Meta Data']; 
@@ -337,6 +361,8 @@ export class AppComponent {
       this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2) + "%";
       // this.changeNum = -0.2; //test negative change
   
+      this.loadingMap['Table'] = true;
+
       //draw price chart
       this.priceChartOptions = {
         chart: { zoomType: 'x', width: null },
@@ -392,8 +418,9 @@ export class AppComponent {
       //have to put createNewArray inside this https.get() to get timeZone
       //If put outsize this function, this.timeZone is undefined...
       this.createNewArray(value, this.timeZone);
-    });
 
+      this.loadingMap['Price'] = true;
+    });
 
     //The order is this.http.get() and drawLineCharts() run simultaneously
     //after onSubmit()'s code finished, then createStockChart() and createNewArray()
@@ -408,15 +435,10 @@ export class AppComponent {
       //parse, get 5 news and convert news link if needed
       var limit = 5;
       this.newsArray = this.chartService.parseNew(data, timeZone, limit); //jsonObj
-
       console.log(this.newsArray);
+      this.loadingMap['News'] = true;
     });
-
   }
-
-
-
-
 
   /**
    * draw historical stock chart
@@ -426,49 +448,33 @@ export class AppComponent {
     //[[1383202800000, 35.405], [1383289200000, 35.525], ... [1508396400000, 77.91]]
     //1000 elements
     var parseRes = this.chartService.parseStockData(data);
-
     this.stockChartOptions = {
-      chart: {
-        height: 400, width: null
-    },
-    title: {
-        text: this.symbolName + ' Stock Value'
-    },
-    subtitle: {
-        useHTML:true,
-        text: "<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
-    },
-    rangeSelector: {
-        selected: 1
-    },
-    series: [{
-        name: this.symbolName + ' Stock Price',
-        data: parseRes,
-        type: 'area',
-        threshold: null,
-        tooltip: {
-            valueDecimals: 2
+      chart: { height: 400, width: null },
+      title: { text: this.symbolName + ' Stock Value' },
+      subtitle: {
+          useHTML:true,
+          text: "<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+      },
+      rangeSelector: { selected: 1 },
+      series: [{
+          name: this.symbolName + ' Stock Price',
+          data: parseRes,
+          type: 'area',
+          threshold: null,
+          tooltip: { valueDecimals: 2 }
+      }],
+      responsive: {
+          rules: [{
+              condition: { maxWidth: 500 },
+              chartOptions: {
+                  chart: { height: 300 },
+                  subtitle: { text: null },
+                  navigator: { enabled: false }
+              }
+          }]
         }
-    }],
-    responsive: {
-        rules: [{
-            condition: {
-                maxWidth: 500
-            },
-            chartOptions: {
-                chart: {
-                    height: 300
-                },
-                subtitle: {
-                    text: null
-                },
-                navigator: {
-                    enabled: false
-                }
-            }
-        }]
       }
-    }
+    this.loadingMap['HighStock'] = true;
   }
 
   /**
@@ -528,10 +534,9 @@ export class AppComponent {
         case 5:{ this.ADXChartOptions = singleLineCharOption; break; }
         case 6:{ this.CCIChartOptions = singleLineCharOption; break; }
       }
-
+      this.loadingMap[indicator] = true;
     });
   }
-
   
   /**
    * draw indicator chart with mutiple target
@@ -578,18 +583,16 @@ export class AppComponent {
             title: { text: '' },
             marker:{ enabled: true, symbol:'square', radius: 1, },
         },
-        tooltip: {
-            crosshairs: true,
-            shared: true
-        },
+        tooltip: { crosshairs: true, shared: true },
         series: [{
             name: '', data: [], lineWidth: 1,
             marker: { enabled: true, symbol:'square', radius: 2 }
-        },
-        {
+          },
+          {
             name: '', data: [], lineWidth: 1,
             marker: { enabled: true, symbol:'square', radius: 2 }
-        }]
+          }
+        ]
       };
 
       mutipleLineChartOption['title']['text'] = indicator;
@@ -611,9 +614,9 @@ export class AppComponent {
         case 3:{ this.STOCHChartOptions = mutipleLineChartOption; break; } 
         case 7:{ this.BBANDSChartOptions = mutipleLineChartOption; break; }
         case 8:{ this.MACDChartOptions = mutipleLineChartOption; break; }
-      }      
+      }
+    
+      this.loadingMap[indicator] = true;
     });
   }
-  
-
 }
