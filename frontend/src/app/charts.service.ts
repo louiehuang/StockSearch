@@ -193,10 +193,8 @@ export class ChartsService {
         date = date.substring(0, commaIdx) + date.substring(commaIdx + 1);
         // date = "Tue 07 Nov 2017 16:01:58 GMT -0500"; //changed to 11:01:58 but get warning!!!
         // console.log(date);
-
         var time = moment.tz(date, timeZone).format("ddd, DD MMM YYYY HH:mm:ss");
         var timeZoneName = moment.tz(date, timeZone).format('zz'); //EDT or EST
-
         var convertedTime = time + " " + timeZoneName;
         // console.log(convertedTime);
         return convertedTime;

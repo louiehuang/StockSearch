@@ -47,7 +47,7 @@
         <div style="border: solid 1px #E3E3E3; margin-top: 15px; margin-left: 15px; margin-right:15px">
 
             <!-- Favorite List Div -->
-            <div *ngIf="!inFavoriteList" [@toStockChart]="state">
+            <div *ngIf="inFavoriteList" [@toStockChart]="state">
                 <div class="swich_bar">
                     <div style="width: 20%; height: 100%; font-size: 17px; padding-top: 5px; padding-left: 15px; font-weight: bold; display: block; float: left">
                         Favorite List
@@ -57,7 +57,7 @@
                         <ul style="position:absolute; right: 15px; bottom:-18px; list-style:none; display:inline; overflow:hidden;">  
                             <li style="float:left; height: 40px;">Automatic Refresh: </li>
                             <li style="float:left; margin-left: 5px;">
-                                <input id="refreshSwitch" type="checkbox" data-toggle="toggle" (change)="setupRefresh()">    
+                                <input id="refreshSwitch" type="checkbox" data-toggle="toggle">    
                             </li>
                             <li style="float:left; margin-left: 5px">
                                 <button style="height: 37px; width: 40px">
@@ -84,7 +84,7 @@
                                 <option value="change">Change</option>
                                 <option value="changePercent">Change Percent</option>
                                 <option value="volume">Volume</option>
-                            </select>                                  
+                            </select>                            
                         </div>
                         <div style="float:left; font-weight: bold; margin: 0px 20px">
                             Order 
@@ -109,7 +109,7 @@
                             <td>{{favStock.symbol}}</td>
                             <td>{{favStock.price}}</td>
                             <td>{{favStock.change}} ({{favStock.changePercent}}%)</td>
-                            <td>{{favStock.volume}}</td>
+                            <td>{{ticks}}</td>
                             <td><span class="glyphicon glyphicon-trash"></span></td>
                         </tr>
                     </table>
@@ -117,7 +117,7 @@
             </div>
 
             <!-- Chart Div -->
-            <div *ngIf="inFavoriteList" [@toFavoriteList]="state">
+            <div *ngIf="!inFavoriteList" [@toFavoriteList]="state">
 
                 <div class="swich_bar">
                     <div style="width: 15%; height: 100%; display: block; float: left; position: relative">

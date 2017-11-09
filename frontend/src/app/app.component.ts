@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { AppService } from './app.service';
 import { ChartsService } from './charts.service';
 
-import { Observable } from 'rxjs/Observable';
+import { Observable, Subscription } from 'rxjs/Rx';
 import { FormControl } from '@angular/forms';
 import 'rxjs/add/operator/startWith';
 import 'rxjs/add/operator/debounceTime';
@@ -65,13 +65,11 @@ export class AppComponent {
   orderRule = false; //reverse 'false' => ascending order, true for descending
 
   symbol : FormControl = new FormControl();
-  // searchResult: Observable<any[]>;
   searchSymbolName = "AAPL"; //this value will change when typing search input
   symbolName = "AAPL"; //this value don't change when typing search input
   searchResult: Object;
 
   priceJson: Object;
-
   lastPrice; changeNum; changePercent; changeToColor; changeToImg;
   timestamp; curOpen; curClose; curRange; curVolume; timeZone;
 
@@ -91,8 +89,13 @@ export class AppComponent {
   //news
   newsArray = [];
 
+  //auto refresh
+  autoRefresh: boolean = false;
+  timer; //refresh timer
+  subscript: Subscription;
+
   constructor(private service: AppService, private chartService: ChartsService, private fb: FacebookService,
-              private http: HttpClient){ 
+              private http: HttpClient, private ref: ChangeDetectorRef){ 
     this.symbol.valueChanges
     .debounceTime(150)
     .subscribe(data => {
@@ -143,9 +146,34 @@ export class AppComponent {
     $('#refreshSwitch').bootstrapToggle();
     $('#refreshSwitch').change((event) => {
       // this.toggleValueChange(event.target.checked);
-      console.log('refresh clicked');
-    });
+      this.autoRefresh = (this.autoRefresh === true ? false : true);
 
+      if(this.autoRefresh){
+        console.log('start auto refreshing');
+        this.timer = Observable.timer(0, 1000); //delay, period
+        this.subscript = this.timer.subscribe(data=> {
+          this.ticks = data;
+          console.log(this.ticks);
+
+          //to update UI, if no detectChanges, UI won't change even if date updated
+          this.ref.detectChanges(); 
+        });
+      }else{
+        console.log('stop auto refreshing');
+        this.subscript.unsubscribe();
+      }
+    });
+  }
+
+
+
+  ticks = 0;
+  setupRefresh(){
+    this.timer = Observable.timer(2000,1000);
+    this.timer.subscribe(t=> {
+      this.ticks = t;
+      console.log(this.ticks);
+    });
   }
 
   /**
@@ -284,9 +312,6 @@ export class AppComponent {
 
 
   
-  setupRefresh(){
-    console.log('123');
-  }
 
   /**
    * Draw all indicator charts
