@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import 'rxjs/add/operator/toPromise';
-import * as moment from 'moment';
+// import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 
 @Injectable()
 export class ChartsService {
@@ -140,33 +141,74 @@ export class ChartsService {
     }
 
 
-    parseNew(data, limit){
+    /**
+     * parse news
+     * there are two type links:
+     * one contains guid, this is artical link ok to use;
+     * one does not contains guid, this is news homepage link, need to do conversion
+     * @param data 
+     * @param limit 
+     */
+    parseNew(data, timeZone, limit){
+        console.log("timeZone: " + timeZone);
         var ret = [];
-        //parse
         for(var i = 0; i < limit; i++){
+            //process link
             var title = data[i]['title'].toString().trim(); //Microsoft focused on AI investments
             var guid = data[i]['guid'][0]['_']; 
-
             guid = guid.toString().substring(guid.length - 7); 
-
             //https://seekingalpha.com/news/3301685-microsoft-focused-ai-investments
             //3301685 is in guid, and -microsoft-focused-ai-investments comes from title
             var link = data[i]['link'].toString(); //in AAPL it's artical link, but in MSFT, it's news index
-
-            console.log(link + ", " + link.indexOf(guid));
-
+            // console.log(link + ", " + link.indexOf(guid));
             if(link.indexOf(guid) == -1){
                 link = "https://seekingalpha.com/news/" + guid;
                 title = title.toLowerCase().replace(/\s+/gi, "-");
                 link += "-" + title;
                 data[i]['link'] = link;
             }
-            console.log(link);
+
+            //process timezone
+            data[i]['pubDate'] = this.convertDate(data[i]['pubDate'].toString(), timeZone);
 
             ret.push(data[i]);
         }
-
         return ret;
+    }
+
+
+    /**
+     * format lookup: http://momentjs.com/docs/#/displaying/format/
+     * date: "Tue, 07 Nov 2017 16:01:58 -0500", but this is not RFC2822 or ISO format
+     * so, change to "Tue 07 Nov 2017 16:01:58 -0500" (delete comma)
+     * timeZone is "US/Eastern"
+     * Question!!!!!
+     * should return "Tue, 07 Nov 2017 16:01:58 EST" or "Tue, 07 Nov 2017 11:01:58 EST" ???
+     * if latter on, date should be "Tue 07 Nov 2017 16:01:58 GMT -0500"
+     * @param date "Tue, 07 Nov 2017 16:01:58 -0500"
+     * @param timeZone 
+     */
+    convertDate(date, timeZone){
+        var commaIdx = date.indexOf(",");
+        date = date.substring(0, commaIdx) + date.substring(commaIdx + 1);
+        // date = "Tue 07 Nov 2017 16:01:58 GMT -0500"; //changed to 11:01:58 but get warning!!!
+        // console.log(date);
+
+        var time = moment.tz(date, timeZone).format("ddd, DD MMM YYYY HH:mm:ss");
+        var timeZoneName = moment.tz(date, timeZone).format('zz'); //EDT or EST
+
+        var convertedTime = time + " " + timeZoneName;
+        // console.log(convertedTime);
+        return convertedTime;
+    }
+
+    /**
+     * 
+     * @param date "2017-11-07 16:16:23"
+     * @param timeZone 
+     */
+    getTimeZoneName(date, timeZone){
+        return moment.tz(date, timeZone).format('zz'); //EDT or EST
     }
 
 }

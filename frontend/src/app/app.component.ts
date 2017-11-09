@@ -10,15 +10,62 @@ import 'rxjs/add/operator/map';
 
 import { configs } from './configs';
 import { HttpClient } from '@angular/common/http';
+import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
+
+
+import {OrderBy} from "./orderBy";
+import {Pipe, PipeTransform} from '@angular/core';
+
+export class Stock {
+  constructor(public symbol: string, public price: string, public change: number, 
+    public changePercent: number, public volume: number, public addTime: string) {}
+} 
+
+export class Person {
+  constructor(public firstName: string, public lastName: string, public age: number) {}
+} 
 
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
+  animations: [
+    trigger('toStockChart', [
+      state('in', style({transform: 'translateX(0)'})),
+      transition('* => in', [
+        style({transform: 'translateX(100%)'}),
+        animate(500)
+      ]),
+    ]),
+    trigger('toFavoriteList', [
+      state('in', style({transform: 'translateX(0)'})),
+      transition('* => in', [
+        style({transform: 'translateX(-100%)'}),
+        animate(500)
+      ])
+    ]),
+  ]
 })
 export class AppComponent {
   title = 'Stock Search';
+
+  state: string = "favList";
+  inFavoriteList: boolean = true;
+  switchDivAnimate(){
+    // this.state = (this.state === "favList" ? "" : "favList");
+    if (this.state === 'favList') {
+      this.state = 'in';
+    }
+    console.log(this.state);
+    this.inFavoriteList = !this.inFavoriteList;
+  }
+
+  favoriteList: Stock[]; //fetch from local storage
+
+  orderRule = "+";
+  fullOrdeRule = '+price'; //'-symbol' for ascending, '+symbol' for descending
+
   symbol : FormControl = new FormControl();
   // searchResult: Observable<any[]>;
   searchSymbolName = "AAPL"; //this value will change when typing search input
@@ -28,7 +75,7 @@ export class AppComponent {
   priceJson: Object;
 
   lastPrice; changeNum; changePercent; changeToColor; changeToImg;
-  timestamp; curOpen; curClose; curRange; curVolume; 
+  timestamp; curOpen; curClose; curRange; curVolume; timeZone;
 
   //chart
   priceChartOptions: Object;
@@ -41,6 +88,17 @@ export class AppComponent {
 
   //news
   newsArray = [];
+
+  fruit: string[] = ["orange", "apple", "pear", "grape", "banana"];
+  people: Person[] = [
+    new Person('Linus', 'Torvalds', 46),
+    new Person('Larry', 'Ellison', 71),
+    new Person('Mark', 'Zuckerberg', 31),
+    new Person('Sergey', 'Brin', 42),
+    new Person('Vint', 'Cerf', 72),
+    new Person('Richard', 'Stallman', 62),
+    new Person('John', 'Papa', 42)
+  ];
 
   constructor(private service: AppService, private chartService: ChartsService, private http: HttpClient){ 
     this.symbol.valueChanges
@@ -56,13 +114,35 @@ export class AppComponent {
         }else{
           this.searchResult = [];
         }
-    })
+    });
   }
 
 
   ngOnInit(){ 
     //drawLineCharts and draw stock chart in onSubmit()
     this.onSubmit('AAPL'); //test
+
+    //test
+    //time use timestamp
+    this.favoriteList = [new Stock('AAPL', '153.28', -0.95, -0.62, 21896592, ""),
+        new Stock('MSFT', '73.28', 0.03, -0.62, 11896592, ""),
+        new Stock('YHOO', '53.28', 0.15, 0.62, 11896592, "")];
+  }
+
+  onSortingKeyChange(detectedValue){
+    this.fullOrdeRule = this.orderRule + detectedValue;
+    this.favoriteList.push(new Stock('AP', '13.28', -0.5, -0.2, 2896592, ""));
+    console.log(this.fullOrdeRule);
+  }
+
+  onSortingRuleChange(value){
+    if(value === "ascending"){
+      this.orderRule = "-";
+    }else if(value === "descending"){
+      this.orderRule = "+";
+    }
+    this.fullOrdeRule = this.orderRule + this.fullOrdeRule.substring(1);
+    console.log(this.fullOrdeRule);
   }
 
 
@@ -113,9 +193,16 @@ export class AppComponent {
       //update table
       this.symbolName = value;
       console.log("onSubmit: " + this.symbolName);
-      var timeZone = meta_data['5. Time Zone'];
-  
-      // console.log(Object.keys(json_series_data)[0]);
+      this.timeZone = meta_data['5. Time Zone'];
+      console.log(this.timeZone);
+
+      //YYYY-MM-DD when closed or YYYY-MM-DD HH:mm:ss when open
+      var lastRefreshedTime = meta_data['3. Last Refreshed'].toString();
+      if(lastRefreshedTime.length <= 12) //"2017-11-07"
+        lastRefreshedTime += " 16:00:00";
+      
+      this.timestamp = lastRefreshedTime + " " + this.chartService.getTimeZoneName(lastRefreshedTime, this.timeZone);
+        
       //cur day (key) is Object.keys(json_series_data)[0]
       var curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
       var prevObj = json_series_data[Object.keys(json_series_data)[1]]; //previous day
@@ -184,21 +271,24 @@ export class AppComponent {
       };
 
       this.createStockChart(json_series_data);
+      //have to put createNewArray inside this https.get() to get timeZone
+      //If put outsize this function, this.timeZone is undefined...
+      this.createNewArray(value, this.timeZone);
     });
 
+    //The order is this.http.get() and drawLineCharts() run simultaneously
+    //after onSubmit()'s code finished, then createStockChart() and createNewArray()
     this.drawLineCharts(value);
-
-    this.createNewArray(value);
   }
 
-  createNewArray(symbol){
+  createNewArray(symbol, timeZone){
     var baseURL = 'http://localhost:12345/?type=news&symbol=';
     console.log("createNewArray: " + baseURL + symbol);
 
     this.http.get(baseURL + symbol).subscribe(data => {
       //parse, get 5 news and convert news link if needed
       var limit = 5;
-      this.newsArray = this.chartService.parseNew(data, limit); //jsonObj
+      this.newsArray = this.chartService.parseNew(data, timeZone, limit); //jsonObj
 
       console.log(this.newsArray);
     });
@@ -220,7 +310,7 @@ export class AppComponent {
 
     this.StockChartOptions = {
       chart: {
-        height: 400
+        height: 400, width: null
     },
     title: {
         text: this.symbolName + ' Stock Value'
@@ -383,6 +473,7 @@ export class AppComponent {
         }]
       };
 
+      mutipleLineChartOption['title']['text'] = indicator;
       mutipleLineChartOption['xAxis']['categories'] = parseRes.date;
       mutipleLineChartOption['series'][0]['name'] = symbol + ' ' + target1;
       mutipleLineChartOption['series'][0]['data'] = parseRes.indicator_1;

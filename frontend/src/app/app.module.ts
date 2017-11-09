@@ -15,12 +15,15 @@ import { HighchartsStatic } from 'angular2-highcharts/dist/HighchartsService';
 
 import { HttpClientModule } from '@angular/common/http';
 import { MomentModule } from 'angular2-moment/moment.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import {OrderBy} from "./orderBy";
 
 declare var require: any;
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent, OrderBy
   ],
   imports: [
     BrowserModule, NgbModule,
@@ -32,7 +35,8 @@ declare var require: any;
                         require('highcharts/modules/exporting'),
                         ),
     HttpClientModule,
-    MomentModule
+    MomentModule,
+    BrowserAnimationsModule
   ],
   providers: [AppService, ChartsService],
   bootstrap: [AppComponent]

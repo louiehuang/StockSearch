@@ -35,6 +35,7 @@
 
 .result_tabs{
     margin-top: 15px;
+    overflow: hidden;
     padding-bottom: 20px;
     background-color: white;
     border-radius: 10px;
@@ -44,9 +45,27 @@
     background-color: white;
 }
 
+.result_tabs .swich_bar{
+    height: 50px;
+    background-color: #EBEBEB;
+}
+
 
 .result_tabs .top-nav_bar{
     padding: 20px 20px;
+    clear: both;
+}
+
+
+
+.paddingHorizontal20px{
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.paddingVertical20px{
+    padding-bottom: 20px;
+    padding-top: 20px;
 }
 
 
@@ -63,17 +82,21 @@
 
 
 
-.result_tabs .tab-content .table-stock{
+.result_tabs .table-stock{
     width: 100%;
 	text-align: left;
 }
 
-.result_tabs .tab-content .table-stock tr{
+.result_tabs .table-stock tr{
     border-top: 1px solid #D3D3D3;
     height: 55px;
 }
 
-.result_tabs .tab-content .table-stock .firstCol{
+.result_tabs .table-stock th, td{
+    padding-left: 10px;
+}
+
+.result_tabs .table-stock .firstCol{
     font-weight: bold;
 }
 
@@ -85,10 +108,10 @@
     color: red;
 }
 
-.result_tabs .tab-content .table-stock tr:nth-child(even) {
+.result_tabs .table-stock tr:nth-child(even) {
 	background: #FFFFFF;
 }
 
-.result_tabs .tab-content .table-stock tr:nth-child(odd) {
+.result_tabs .table-stock tr:nth-child(odd) {
 	background: #F9F9F9;
 }
