@@ -80,6 +80,9 @@
     margin-left: 3px;
 }
 
+.input_error{
+    border: 2px solid red;
+ }
 
 
 .result_tabs .table-stock{
@@ -114,4 +117,13 @@
 
 .result_tabs .table-stock tr:nth-child(odd) {
 	background: #F9F9F9;
+}
+
+
+.icon-button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+    border: 0;
+    background: transparent;
 }

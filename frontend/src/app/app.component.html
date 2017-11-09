@@ -15,7 +15,7 @@
                             <label>Enter Stock Ticker Symbol:<span style="color: red">*</span></label>
                         </div>
                         <div class="col-sm-6">
-                            <input name="input_symbol" #stockSymbol 
+                            <input id="input_symbol" name="input_symbol" #stockSymbol (blur)="onInputBlur()"
                                 [matAutocomplete]="auto" required [formControl]="symbol"
                                 style="width: 100%" placeholder="e.g. AAPL" >
                             <mat-autocomplete (optionSelected)="onSubmit(stockSymbol.value.toUpperCase())"
@@ -24,7 +24,7 @@
                                 {{ symbol.Symbol }} - {{symbol.Name}} ({{symbol.Exchange}})
                                 </mat-option>
                             </mat-autocomplete>
-                            <div *ngIf="errMessage">{{ errMessage }}</div>
+                            <div style="text-align: left" *ngIf="isInvalidInput">Please enter a stock ticker symbol</div>
                         </div>
                         <div class="col-sm-3">
                             <button type="submit" class="btn btn-primary" >
@@ -44,6 +44,15 @@
 
     <div class="result_tabs">
 
+        <div>
+            <input id="my-toggle"
+                type="checkbox" 
+                [(ngModel)]="toggleValue"
+                data-toggle="toggle" 
+                data-on="ON!!!" 
+                data-off="OFF!!!">
+        </div>
+
         <div style="border: solid 1px #E3E3E3; margin-top: 15px; margin-left: 15px; margin-right:15px">
 
             <!-- Favorite List Div -->
@@ -60,7 +69,7 @@
                                 <input id="refreshSwitch" type="checkbox" data-toggle="toggle">    
                             </li>
                             <li style="float:left; margin-left: 5px">
-                                <button style="height: 37px; width: 40px">
+                                <button style="height: 37px; width: 40px" (click)="updateFavoriteList()">
                                     <span class="glyphicon glyphicon-refresh"></span>
                                 </button>
                             </li>  
@@ -109,8 +118,11 @@
                             <td>{{favStock.symbol}}</td>
                             <td>{{favStock.price}}</td>
                             <td>{{favStock.change}} ({{favStock.changePercent}}%)</td>
-                            <td>{{ticks}}</td>
-                            <td><span class="glyphicon glyphicon-trash"></span></td>
+                            <td>{{favStock.volume}}</td>
+                            <td>
+                                <!-- <span class="glyphicon glyphicon-trash"></span> -->
+                                <button type="button"><span class="glyphicon glyphicon-trash"></span></button>
+                            </td>
                         </tr>
                     </table>
                 </div>
@@ -156,13 +168,19 @@
                                     <div style="height: 35px">
                                         <div style="float:left; font-weight: bold; padding: 10px">Stock Details</div>
                                         <div style="float:right; text-align: right">
-                                            <div class="icon_wrap" (click)="shareOnFacebook()">
-                                                <img src="http://cs-server.usc.edu:45678/hw/hw8/images/facebook.png" 
-                                                    style="width: 25px; height: 25px; margin-top:4px"/>
+                                            <div class="icon_wrap">
+                                                <button class="icon-button" (click)="shareOnFacebook()">
+                                                    <img src="http://cs-server.usc.edu:45678/hw/hw8/images/facebook.png" 
+                                                        style="width: 25px; height: 25px; margin-top:1px"/>
+                                                </button>
                                             </div>
-                                            <div class="icon_wrap" (click)="addToFavorite()">
-                                                <span id="btn_fav" class="glyphicon glyphicon-star-empty"
-                                                    style="color: #FDD445; font-size: 20px; margin-left:5px; margin-top:5px"></span>
+                                            <div class="icon_wrap">
+                                                <button class="icon-button" (click)="addToFavorite()">
+                                                    <span id="btn_fav" 
+                                                        style="color: #FDD445; font-size: 20px; margin-left:3px; margin-top:3px" 
+                                                        class="glyphicon glyphicon-star-empty">
+                                                    </span>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>

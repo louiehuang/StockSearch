@@ -13,13 +13,14 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
 
 import { FacebookService, InitParams, UIParams, UIResponse } from 'ngx-facebook';
+import 'bootstrap-toggle';
 
-declare var $: any;
+declare let $: any;
 
 export class Stock {
   //addTime is the timestamp that a user add a stock to his favorite list
-  constructor(public symbol: string, public price: string, public change: number, 
-    public changePercent: number, public volume: number, public addTime: number) {}
+  constructor(public symbol: string, public price: number, public change: number, 
+    public changePercent: number, public volume: string, public addTime: number) {}
 } 
 
 @Component({
@@ -45,6 +46,7 @@ export class Stock {
 })
 export class AppComponent {
   title = 'Stock Search';
+  isInvalidInput: boolean = false;
 
   state: string;
   inFavoriteList: boolean = true;
@@ -65,8 +67,8 @@ export class AppComponent {
   orderRule = false; //reverse 'false' => ascending order, true for descending
 
   symbol : FormControl = new FormControl();
-  searchSymbolName = "AAPL"; //this value will change when typing search input
-  symbolName = "AAPL"; //this value don't change when typing search input
+  searchSymbolName = ""; //this value will change when typing search input
+  symbolName = ""; //this value don't change when typing search input
   searchResult: Object;
 
   priceJson: Object;
@@ -93,22 +95,29 @@ export class AppComponent {
   autoRefresh: boolean = false;
   timer; //refresh timer
   subscript: Subscription;
+  
 
   constructor(private service: AppService, private chartService: ChartsService, private fb: FacebookService,
-              private http: HttpClient, private ref: ChangeDetectorRef){ 
+        private http: HttpClient, private ref: ChangeDetectorRef){ 
     this.symbol.valueChanges
     .debounceTime(150)
     .subscribe(data => {
-        if(data !== ""){
-          this.service.searchSymbol(data).subscribe(response =>{
-              this.searchSymbolName = data;
-              console.log(this.searchSymbolName);
-              this.searchResult = response;
-              console.log(response);
-          })
-        }else{
-          this.searchResult = [];
-        }
+      this.searchSymbolName = data;
+      if(this.inputValidationCheck(data)){
+        //valid
+        document.getElementById("input_symbol").className = "";
+        this.isInvalidInput = false;
+        this.ref.detectChanges();
+        this.service.searchSymbol(data).subscribe(response =>{
+            console.log(this.searchSymbolName);
+            this.searchResult = response;
+            console.log(response);
+        })
+      }else{
+        this.isInvalidInput = true;
+        document.getElementById("input_symbol").className = "input_error";
+        this.searchResult = [];
+      }
     });
 
     let initParams: InitParams = {
@@ -125,14 +134,20 @@ export class AppComponent {
     this.onSubmit('AAPL'); //test
 
     //time use timestamp
-    this.favoriteList = [new Stock('AAPL', '153.28', -0.95, -0.62, 21896592, 1510204242065),
-        new Stock('MSFT', '73.28', 0.03, -0.62, 11896592, 1510204245065),
-        new Stock('YHOO', '53.28', 0.15, 0.62, 11896592, 1510204145065)];
+    this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
+        new Stock('MSFT', 73.28, 0.03, -0.62, '11,896,592', 1510204245065),
+        new Stock('YHOO', 53.28, 0.15, 0.62, '11,896,592', 1510204145065)];
 
     localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
 
 
+  toggleValue:boolean = true;
+  toggleValueChanged(value:boolean) {
+    console.log('toggle changed', this.toggleValue);
+    this.toggleValue = !this.toggleValue;
+  }
+  
   /**
    * if need to get element id, put code here
    */
@@ -143,6 +158,12 @@ export class AppComponent {
     //   document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
     // }
 
+    $('#my-toggle').bootstrapToggle();
+    $('#my-toggle').change((event) => {
+      this.toggleValueChanged(event.target.checked);
+    });
+
+
     $('#refreshSwitch').bootstrapToggle();
     $('#refreshSwitch').change((event) => {
       // this.toggleValueChange(event.target.checked);
@@ -150,13 +171,9 @@ export class AppComponent {
 
       if(this.autoRefresh){
         console.log('start auto refreshing');
-        this.timer = Observable.timer(0, 1000); //delay, period
+        this.timer = Observable.timer(0, 15000); //delay, period
         this.subscript = this.timer.subscribe(data=> {
-          this.ticks = data;
-          console.log(this.ticks);
-
-          //to update UI, if no detectChanges, UI won't change even if date updated
-          this.ref.detectChanges(); 
+          this.updateFavoriteList();
         });
       }else{
         console.log('stop auto refreshing');
@@ -166,15 +183,57 @@ export class AppComponent {
   }
 
 
-
-  ticks = 0;
-  setupRefresh(){
-    this.timer = Observable.timer(2000,1000);
-    this.timer.subscribe(t=> {
-      this.ticks = t;
-      console.log(this.ticks);
-    });
+  onInputBlur(){
+    console.log(this.searchSymbolName);
+    let valid = this.inputValidationCheck(this.searchSymbolName);
+    if(!valid){
+      document.getElementById("input_symbol").className = "input_error";
+    }else{
+      document.getElementById("input_symbol").className = "";
+    }
+    console.log("valid: " + valid);
   }
+
+  updateFavoriteList(){
+    for (let i in this.favoriteList) {
+      const queryURL = 'http://localhost:12345/?type=price&symbol=' + this.favoriteList[i].symbol;
+      this.updateStockData(i, queryURL); //detectChanges() in updateStockData()
+    }
+  }
+
+  /**
+   * request favorite stock data and update favoriteList
+   */
+  updateStockData(index, queryURL){
+    console.log('before refresh ' + this.favoriteList[index].symbol + ", " + this.favoriteList[index].price);
+    this.http.get(queryURL).subscribe(data => {
+      let meta_data = data['Meta Data']; 
+        let json_series_data = data['Time Series (Daily)']; 
+        let symbol = meta_data['2. Symbol'];
+        let newOpen, newClose, newVolume;
+
+        for (let key in json_series_data) {
+            //just get one data, then break
+            newOpen = json_series_data[key]['1. open'];
+            newClose = json_series_data[key]['4. close'];
+            newVolume = json_series_data[key]['5. volume'];
+            break;
+        }
+        let prevPrice = this.favoriteList[index].price;
+        let temChange = (parseFloat(newOpen) - prevPrice);
+        this.favoriteList[index].change = parseFloat(temChange.toFixed(2));
+        this.favoriteList[index].changePercent = parseFloat((temChange / prevPrice * 100).toFixed(2));
+        this.favoriteList[index].price = parseFloat(newOpen);
+        this.favoriteList[index].volume = newVolume.replace(/(?=(?:\d{3})+\b)/g, ',');
+        
+        //to update UI, if no detectChanges, UI won't change even if date updated
+        this.ref.detectChanges(); 
+      },
+      err => {
+        console.log(err);
+      });
+  }
+
 
   /**
    * sorting key changes, eg. sort by symbol, price, volume...
@@ -198,11 +257,13 @@ export class AppComponent {
     // console.log(this.orderRule);
   }
 
+
+
   /**
    * add (or remove) stock to favorite list
    */
   addToFavorite(){
-    var favoriteCheckRes = this.isStockInFavoriteList();
+    let favoriteCheckRes = this.isStockInFavoriteList();
     
     if(favoriteCheckRes.found){
       //if in favorite List, remove it change ang img to empty-star
@@ -224,8 +285,8 @@ export class AppComponent {
   isStockInFavoriteList(){
     this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
     //console.log(this.favoriteList); 
-    var found = false, index = -1;
-    for(var i = 0; i < this.favoriteList.length; i++) {
+    let found = false, index = -1;
+    for(let i = 0; i < this.favoriteList.length; i++) {
         if (this.favoriteList[i].symbol == this.symbolName) {
             found = true;
             index = i;
@@ -248,7 +309,7 @@ export class AppComponent {
    * add current stock to favorite list
    */
   addCurrentStockToFavoriteList(){
-    var addTime = Date.now();
+    let addTime = Date.now();
     console.log(addTime);
     this.favoriteList.push(
       new Stock(this.symbolName, this.lastPrice, this.changeNum, 
@@ -337,14 +398,34 @@ export class AppComponent {
 
 
   /**
+   * check whether input is valid (not empty and not only contains space)
+   * @param value 
+   */
+  inputValidationCheck(value): boolean{
+    length = value.replace(/\s/g, '').length;
+    let isValid = (length !== 0);
+    if(isValid)
+      this.isInvalidInput = false;
+    else
+      this.isInvalidInput = true; //empty
+    this.ref.detectChanges();
+    console.log(isValid);
+    return isValid;
+  }
+
+  /**
    * query:
    * (1) price & volume data
    * (2) all indicators 
    * @param value 
    */
   async onSubmit(value) {
-    // var data = await this.service.queryPrice(value);
-    var baseURL = 'http://localhost:12345/?type=price&symbol=';
+    if(this.inputValidationCheck(value) == false)
+      return;
+
+    this.switchDivAnimate();
+    // let data = await this.service.queryPrice(value);
+    let baseURL = 'http://localhost:12345/?type=price&symbol=';
     console.log("onSubmit: " + baseURL + value);
 
     //set to false, wait for loading data
@@ -352,9 +433,9 @@ export class AppComponent {
     'CCI': false, 'BBANDS': false, 'MACD': false, 'Table': false, 'HighStock': false, 'News': false};
 
     this.http.get(baseURL + value).subscribe(data => {
-      var meta_data = data['Meta Data']; 
-      var json_series_data = data['Time Series (Daily)']; 
-      var parseRes = this.chartService.parsePriceData(json_series_data);
+      let meta_data = data['Meta Data']; 
+      let json_series_data = data['Time Series (Daily)']; 
+      let parseRes = this.chartService.parsePriceData(json_series_data);
   
       //update table
       this.symbolName = value;
@@ -364,15 +445,15 @@ export class AppComponent {
       console.log(this.timeZone);
 
       //YYYY-MM-DD when closed or YYYY-MM-DD HH:mm:ss when open
-      var lastRefreshedTime = meta_data['3. Last Refreshed'].toString();
+      let lastRefreshedTime = meta_data['3. Last Refreshed'].toString();
       if(lastRefreshedTime.length <= 12) //"2017-11-07"
         lastRefreshedTime += " 16:00:00";
       
       this.timestamp = lastRefreshedTime + " " + this.chartService.getTimeZoneName(lastRefreshedTime, this.timeZone);
         
       //cur day (key) is Object.keys(json_series_data)[0]
-      var curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
-      var prevObj = json_series_data[Object.keys(json_series_data)[1]]; //previous day
+      let curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
+      let prevObj = json_series_data[Object.keys(json_series_data)[1]]; //previous day
       this.curOpen = parseFloat(curObj['1. open']).toFixed(2);
       this.curClose = parseFloat(curObj['4. close']).toFixed(2);
       this.curRange = parseFloat(curObj['3. low']).toFixed(2) + ' - ' + parseFloat(curObj['2. high']).toFixed(2);
@@ -453,12 +534,12 @@ export class AppComponent {
   }
 
   createNewArray(symbol, timeZone){
-    var baseURL = 'http://localhost:12345/?type=news&symbol=';
+    let baseURL = 'http://localhost:12345/?type=news&symbol=';
     console.log("createNewArray: " + baseURL + symbol);
 
     this.http.get(baseURL + symbol).subscribe(data => {
       //parse, get 5 news and convert news link if needed
-      var limit = 5;
+      let limit = 5;
       this.newsArray = this.chartService.parseNew(data, timeZone, limit); //jsonObj
       console.log(this.newsArray);
       this.loadingMap['News'] = true;
@@ -472,7 +553,7 @@ export class AppComponent {
   createStockChart(data){
     //[[1383202800000, 35.405], [1383289200000, 35.525], ... [1508396400000, 77.91]]
     //1000 elements
-    var parseRes = this.chartService.parseStockData(data);
+    let parseRes = this.chartService.parseStockData(data);
     this.stockChartOptions = {
       chart: { height: 400, width: null },
       title: { text: this.symbolName + ' Stock Value' },
@@ -509,13 +590,13 @@ export class AppComponent {
    * @param indicator 
    */
   drawSingleLineChart(indexMap, symbol, indicator){
-    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    let baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
     console.log("drawSingleLineChart: " + baseURL + '&indicator=' + indicator);
     this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
       console.log(data);
-      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
-      var parseRes = this.chartService.parseSingleTarget(indicator_data, indicator);
-      var singleLineCharOption = {
+      let indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      let parseRes = this.chartService.parseSingleTarget(indicator_data, indicator);
+      let singleLineCharOption = {
         chart: { zoomType: 'x' },
         title: { text: ''  },
         subtitle: {
@@ -573,21 +654,21 @@ export class AppComponent {
    * @param target3 
    */
   drawMultipleLineChart(indexMap, symbol, indicator, target1, target2, target3){
-    var baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
-    var isTwoLine = false;
+    let baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    let isTwoLine = false;
     if(target3.length == 0)
       isTwoLine = true;
 
     this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
       console.log(data);
-      var indicator_data = data['Technical Analysis: ' + indicator]; //full size data
-      var parseRes;
+      let indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      let parseRes;
       if(isTwoLine == true)
         parseRes = this.chartService.parseTwoTarget(indicator_data, target1, target2); //SlowD, SlowK
       else 
         parseRes = this.chartService.parseThreearget(indicator_data, target1, target2, target3); 
 
-      var mutipleLineChartOption = {
+        let mutipleLineChartOption = {
         chart: { zoomType: 'x' },
         title: { text: '' },
         subtitle: {
@@ -629,7 +710,7 @@ export class AppComponent {
 
       if(isTwoLine == false){ //three lines
         //add a new series
-        var newSeries = {'name':'', 'data':[], 'lineWidth': 1, 'marker': { enabled: true, symbol:'square', radius: 2 }};
+        let newSeries = {'name':'', 'data':[], 'lineWidth': 1, 'marker': { enabled: true, symbol:'square', radius: 2 }};
         newSeries['name'] = symbol + ' ' + target3;
         newSeries['data'] = parseRes.indicator_3;
         mutipleLineChartOption['series'].push(newSeries);
