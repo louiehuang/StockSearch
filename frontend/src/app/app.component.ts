@@ -9,19 +9,16 @@ import 'rxjs/add/operator/debounceTime';
 import 'rxjs/add/operator/map';
 
 import { configs } from './configs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
+
+import { FacebookService, InitParams, UIParams, UIResponse } from 'ngx-facebook';
 
 export class Stock {
   //addTime is the timestamp that a user add a stock to his favorite list
   constructor(public symbol: string, public price: string, public change: number, 
     public changePercent: number, public volume: number, public addTime: number) {}
 } 
-
-export class Person {
-  constructor(public firstName: string, public lastName: string, public age: number) {}
-} 
-
 
 @Component({
   selector: 'app-root',
@@ -47,14 +44,13 @@ export class Person {
 export class AppComponent {
   title = 'Stock Search';
 
-  state: string = "favList";
+  state: string;
   inFavoriteList: boolean = true;
   switchDivAnimate(){
-    // this.state = (this.state === "favList" ? "" : "favList");
-    if (this.state === 'favList') {
-      this.state = 'in';
-    }
-    console.log(this.state);
+    // if (this.state === 'favList') {
+    //   this.state = 'in';
+    // }
+    this.state = 'in';
     this.inFavoriteList = !this.inFavoriteList;
   }
 
@@ -80,24 +76,18 @@ export class AppComponent {
   RSIChartOptions: Object; ADXChartOptions: Object; CCIChartOptions: Object;
   STOCHChartOptions: Object; BBANDSChartOptions: Object; MACDChartOptions: Object;
 
+  indexMap = {'Price': 0, 'SMA': 1, 'EMA': 2, 'STOCH': 3, 'RSI': 4,
+              'ADX': 5, 'CCI': 6, 'BBANDS': 7, 'MACD': 8};
+  chartIdentity; //show which chart the user is currently looking, 'Pirce', 'SMA'...
+
   //stock
-  StockChartOptions: Object;
+  stockChartOptions: Object;
 
   //news
   newsArray = [];
 
-  fruit: string[] = ["orange", "apple", "pear", "grape", "banana"];
-  people: Person[] = [
-    new Person('Linus', 'Torvalds', 46),
-    new Person('Larry', 'Ellison', 71),
-    new Person('Mark', 'Zuckerberg', 31),
-    new Person('Sergey', 'Brin', 42),
-    new Person('Vint', 'Cerf', 72),
-    new Person('Richard', 'Stallman', 62),
-    new Person('John', 'Papa', 42)
-  ];
-
-  constructor(private service: AppService, private chartService: ChartsService, private http: HttpClient){ 
+  constructor(private service: AppService, private chartService: ChartsService, private fb: FacebookService,
+              private http: HttpClient){ 
     this.symbol.valueChanges
     .debounceTime(150)
     .subscribe(data => {
@@ -112,6 +102,14 @@ export class AppComponent {
           this.searchResult = [];
         }
     });
+
+    let initParams: InitParams = {
+      appId: '918643571616008',
+      xfbml: true,
+      version: 'v2.11'
+    };
+    fb.init(initParams);
+
   }
 
 
@@ -119,14 +117,22 @@ export class AppComponent {
     //drawLineCharts and draw stock chart in onSubmit()
     this.onSubmit('AAPL'); //test
 
-    //test
     //time use timestamp
-    this.favoriteList = [new Stock('AAPL', '153.28', -0.95, -0.62, 21896592, ""),
-        new Stock('MSFT', '73.28', 0.03, -0.62, 11896592, ""),
-        new Stock('YHOO', '53.28', 0.15, 0.62, 11896592, "")];
+    this.favoriteList = [new Stock('AAPL', '153.28', -0.95, -0.62, 21896592, 1510204242065),
+        new Stock('MSFT', '73.28', 0.03, -0.62, 11896592, 1510204245065),
+        new Stock('YHOO', '53.28', 0.15, 0.62, 11896592, 1510204145065)];
 
     localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
+
+
+  // ngAfterViewInit(){
+  //   //if stock user is searching is in his favorite list, change icon
+  //   var favoriteCheckRes = this.isStockInFavoriteList();
+  //   if(favoriteCheckRes.found){
+  //     document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
+  //   }
+  // }
 
   /**
    * sorting key changes, eg. sort by symbol, price, volume...
@@ -150,14 +156,32 @@ export class AppComponent {
     // console.log(this.orderRule);
   }
 
-
   /**
    * add (or remove) stock to favorite list
    */
   addToFavorite(){
-    this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
-    console.log(this.favoriteList);
+    var favoriteCheckRes = this.isStockInFavoriteList();
     
+    if(favoriteCheckRes.found){
+      //if in favorite List, remove it change ang img to empty-star
+      document.getElementById("btn_fav").className = "glyphicon glyphicon-star-empty";
+      this.removeCurrentStockToFavoriteList(favoriteCheckRes.index);
+    }else{
+      //else add to favorite List, and change img to star
+      document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
+      this.addCurrentStockToFavoriteList();
+    }
+
+    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+  }
+
+  /**
+   * check whether current searching stock is in user's favorite list
+   * if so, return true and its index; otherwise, return false and -1
+   */
+  isStockInFavoriteList(){
+    this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
+    //console.log(this.favoriteList); 
     var found = false, index = -1;
     for(var i = 0; i < this.favoriteList.length; i++) {
         if (this.favoriteList[i].symbol == this.symbolName) {
@@ -166,17 +190,7 @@ export class AppComponent {
             break;
         }
     }
-    if(found){
-      //if in favorite List, remove it change ang img to empty-star
-      document.getElementById("btn_fav").className = "glyphicon glyphicon-star-empty";
-      this.removeCurrentStockToFavoriteList(index);
-    }else{
-      //else add to favorite List, and change img to star
-      document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
-      this.addCurrentStockToFavoriteList();
-    }
-
-    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+    return {found, index};
   }
 
   /**
@@ -202,28 +216,77 @@ export class AppComponent {
 
 
   /**
+   * change chart Id when clicking different chart (price and indicators chart)
+   * @param value 
+   */
+  updateChartId(value){
+    this.chartIdentity = value;
+    console.log(this.chartIdentity);
+    console.log(this.indexMap[this.chartIdentity]);
+  }
+
+  /**
+   * export stock chart to facebook
+   */
+  shareOnFacebook(){
+    //export chart
+    let chartOptions = JSON.stringify(this.priceChartOptions);
+    switch(this.indexMap[this.chartIdentity]){
+      case 1:{ chartOptions = JSON.stringify(this.SMAChartOptions); break; } 
+      case 2:{ chartOptions = JSON.stringify(this.EMAChartOptions); break; }
+      case 3:{ chartOptions = JSON.stringify(this.STOCHChartOptions); break; }
+      case 4:{ chartOptions = JSON.stringify(this.RSIChartOptions); break; }
+      case 5:{ chartOptions = JSON.stringify(this.ADXChartOptions); break; }
+      case 6:{ chartOptions = JSON.stringify(this.CCIChartOptions); break; }
+      case 7:{ chartOptions = JSON.stringify(this.BBANDSChartOptions); break; }
+      case 8:{ chartOptions = JSON.stringify(this.MACDChartOptions); break; }
+    }
+    let imgURL = encodeURI('async=false&type=jpeg&width=600&options=' + chartOptions);
+    let exportImgURL = 'http://export.highcharts.com/';
+
+    this.http.post(exportImgURL, imgURL, {
+      responseType: 'text',
+      headers: new HttpHeaders().set('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8')
+                .append('accept', '*/*')
+    }).subscribe(res => {
+      console.log(exportImgURL + res);
+      let params: UIParams = {
+        method: 'feed',
+        link: exportImgURL + res  //Full URL
+      }
+      this.fb.ui(params)
+        .then((res: UIResponse) => {
+          alert('Shared Successfully');
+          console.log(res);
+        }).catch((e: any) => {
+          alert('Canceled');
+          // console.error(e);
+        });
+    },
+      err =>{
+        // console.log(err);
+    });
+  }
+
+  /**
    * Draw all indicator charts
    * @param symbol 
    */
   drawLineCharts(symbol){
     console.log("draw line: " + symbol);
-    var indexMap = [];
-    indexMap['Price'] = 0; //for price chart
-    indexMap['SMA'] = 1; indexMap['EMA'] = 2; indexMap['STOCH'] = 3; indexMap['RSI'] = 4;
-    indexMap['ADX'] = 5; indexMap['CCI'] = 6; indexMap['BBANDS'] = 7; indexMap['MACD'] = 8;
     
     /***** Single Line *****/
-    this.drawSingleLineChart(indexMap, symbol, 'SMA');
-    this.drawSingleLineChart(indexMap, symbol, 'EMA');
-    this.drawSingleLineChart(indexMap, symbol, 'RSI');
-    this.drawSingleLineChart(indexMap, symbol, 'ADX');
-    this.drawSingleLineChart(indexMap, symbol, 'CCI');
+    this.drawSingleLineChart(this.indexMap, symbol, 'SMA');
+    this.drawSingleLineChart(this.indexMap, symbol, 'EMA');
+    this.drawSingleLineChart(this.indexMap, symbol, 'RSI');
+    this.drawSingleLineChart(this.indexMap, symbol, 'ADX');
+    this.drawSingleLineChart(this.indexMap, symbol, 'CCI');
     /***** Single Line*****/
 
     /***** Mutiple Lines *****/
-    this.drawMultipleLineChart(indexMap, symbol, 'STOCH', 'SlowD', 'SlowK', ''); //Two
-    this.drawMultipleLineChart(indexMap, symbol, 'BBANDS', 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'); //Three
-    this.drawMultipleLineChart(indexMap, symbol, 'MACD', 'MACD_Signal', 'MACD', 'MACD_Hist'); //Three
+    this.drawMultipleLineChart(this.indexMap, symbol, 'STOCH', 'SlowD', 'SlowK', ''); //Two
+    this.drawMultipleLineChart(this.indexMap, symbol, 'BBANDS', 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'); //Three
+    this.drawMultipleLineChart(this.indexMap, symbol, 'MACD', 'MACD_Signal', 'MACD', 'MACD_Hist'); //Three
     /***** Mutiple Lines *****/
   }
 
@@ -247,6 +310,7 @@ export class AppComponent {
       //update table
       this.symbolName = value;
       console.log("onSubmit: " + this.symbolName);
+
       this.timeZone = meta_data['5. Time Zone'];
       console.log(this.timeZone);
 
@@ -330,6 +394,7 @@ export class AppComponent {
       this.createNewArray(value, this.timeZone);
     });
 
+
     //The order is this.http.get() and drawLineCharts() run simultaneously
     //after onSubmit()'s code finished, then createStockChart() and createNewArray()
     this.drawLineCharts(value);
@@ -362,7 +427,7 @@ export class AppComponent {
     //1000 elements
     var parseRes = this.chartService.parseStockData(data);
 
-    this.StockChartOptions = {
+    this.stockChartOptions = {
       chart: {
         height: 400, width: null
     },

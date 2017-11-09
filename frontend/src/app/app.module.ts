@@ -18,6 +18,7 @@ import { MomentModule } from 'angular2-moment/moment.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { OrderModule } from 'ngx-order-pipe';
+import { FacebookModule } from 'ngx-facebook';
 
 declare var require: any;
 
@@ -34,6 +35,7 @@ declare var require: any;
                         require('highcharts/highstock'),
                         require('highcharts/modules/exporting'),
                         ),
+    FacebookModule.forRoot(),
     HttpClientModule,
     MomentModule,
     BrowserAnimationsModule,

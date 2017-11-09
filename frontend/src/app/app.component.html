@@ -48,7 +48,7 @@
 
 
             <!-- Favorite List Div -->
-            <div *ngIf="inFavoriteList" [@toStockChart]="first">
+            <div *ngIf="inFavoriteList" [@toStockChart]="state">
                 <div class="swich_bar">
                     <div style="width: 20%; height: 100%; font-size: 17px; padding-top: 5px; padding-left: 15px; font-weight: bold; display: block; float: left">
                         Favorite List
@@ -118,7 +118,7 @@
             </div>
 
             <!-- Chart Div -->
-            <div *ngIf="!inFavoriteList" [@toFavoriteList]="second">
+            <div *ngIf="!inFavoriteList" [@toFavoriteList]="state">
 
                 <div class="swich_bar">
                     <div style="width: 15%; height: 100%; display: block; float: left; position: relative">
@@ -151,7 +151,7 @@
                                 <div style="height: 35px">
                                     <div style="float:left; font-weight: bold; padding: 10px">Stock Details</div>
                                     <div style="float:right; text-align: right">
-                                        <div class="icon_wrap">
+                                        <div class="icon_wrap" (click)="shareOnFacebook()">
                                             <img src="http://cs-server.usc.edu:45678/hw/hw8/images/facebook.png" 
                                                 style="width: 25px; height: 25px; margin-top:4px"/>
                                         </div>
@@ -215,15 +215,15 @@
                             <div class="col-md-6">
                                 <div>
                                     <ul class="nav nav-tabs">
-                                    <li class="active"><a data-toggle="tab" href="#chart_price">Price</a></li>
-                                    <li><a data-toggle="tab" href="#indicator_SMA">SMA</a></li>
-                                    <li><a data-toggle="tab" href="#indicator_EMA">EMA</a></li>
-                                    <li><a data-toggle="tab" href="#indicator_STOCH">STOCH</a></li>
-                                    <li><a data-toggle="tab" href="#indicator_RSI">RSI</a></li>
-                                    <li><a data-toggle="tab" href="#indicator_ADX">ADX</a></li>
-                                    <li><a data-toggle="tab" href="#indicator_CCI">CCI</a></li>
-                                    <li><a data-toggle="tab" href="#indicator_BBANDS">BBANDS</a></li>
-                                    <li><a data-toggle="tab" href="#indicator_MACD">MACD</a></li>
+                                        <li (click)="updateChartId('Price')" class="active"><a data-toggle="tab" href="#chart_price">Price</a></li>
+                                        <li (click)="updateChartId('SMA')"><a data-toggle="tab" href="#indicator_SMA">SMA</a></li>
+                                        <li (click)="updateChartId('EMA')"><a data-toggle="tab" href="#indicator_EMA">EMA</a></li>
+                                        <li (click)="updateChartId('STOCH')"><a data-toggle="tab" href="#indicator_STOCH">STOCH</a></li>
+                                        <li (click)="updateChartId('RSI')"><a data-toggle="tab" href="#indicator_RSI">RSI</a></li>
+                                        <li (click)="updateChartId('ADX')"><a data-toggle="tab" href="#indicator_ADX">ADX</a></li>
+                                        <li (click)="updateChartId('CCI')"><a data-toggle="tab" href="#indicator_CCI">CCI</a></li>
+                                        <li (click)="updateChartId('BBANDS')"><a data-toggle="tab" href="#indicator_BBANDS">BBANDS</a></li>
+                                        <li (click)="updateChartId('MACD')"><a data-toggle="tab" href="#indicator_MACD">MACD</a></li>
                                     </ul>
                                 </div>
 
@@ -289,7 +289,7 @@
 
                     <div id="menu_history" class="tab-pane fade">
                         <div style="margin-top:20px">
-                            <chart type="StockChart" [options]="StockChartOptions"></chart>
+                            <chart type="StockChart" [options]="stockChartOptions"></chart>
                         </div>
                     </div>
 
