@@ -8,33 +8,35 @@ var server = http.createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Content-Length, Authorization, Accept,X-Requested-With");
     res.setHeader("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");
 
-    //http://localhost:12345/?type=autocomplete&symbol=AAPL
+    //http://localhost:12345/autocomplete?symbol=AAPL
     var q = url.parse(req.url, true).query;
-    var queryType = q.type;
+    var pathName = url.parse(req.url, true).pathname;
     var symbol = q.symbol;
 
-    if(queryType === "autocomplete"){
-        //http://localhost:12345/?type=autocomplete&symbol=AAPL
+    console.log(pathName + ", " + symbol);
+
+    if(pathName === "/autocomplete"){
+        //http://localhost:12345/autocomplete?symbol=AAPL
         queryFullSymbolName(symbol, res);
-    }else if(queryType === "price"){
-        //http://localhost:12345/?type=price&symbol=AAPL
+    }else if(pathName === "/price"){
+        //http://localhost:12345/price?symbol=AAPL
         queryStockPrice(symbol, res);
         // locallyQueryStockPrice(symbol, res); //local test
-    }else if(queryType === "indicator"){
-        //http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA
+    }else if(pathName === "/indicator"){
+        //http://localhost:12345/indicator?symbol=AAPL&indicator=SMA
         var indicator = q.indicator;
         // console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
         querySingleIndicator(symbol, indicator, res);
         // locallyQuerySingleIndicator(symbol, indicator, res); //local test
-    }else if(queryType === "news"){
-        //http://localhost:12345/?type=news&symbol=AAPL
+    }else if(pathName === "/news"){
+        //http://localhost:12345/news?symbol=AAPL
         queryNews(symbol, res);
     } else{
         res.writeHead(404, {"Content-Type": "text/plain"});
         res.end("Invalid Format");
     }
 });
-var port = process.env.PORT || 12345;
+var port = process.env.PORT || 3000;
 server.listen(port);
 
 /**

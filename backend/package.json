@@ -1,8 +1,6 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "author": "Liuyin Huang",
-  "license": "ISC",
   "dependencies": {
     "ejs": "latest",
     "aws-sdk": "latest",

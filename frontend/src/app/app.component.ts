@@ -149,11 +149,11 @@ export class AppComponent {
     // this.onSubmit('AAPL'); //test
 
     //time use timestamp
-    this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
-        new Stock('MSFT', 73.28, 0.03, -0.62, '11,896,592', 1510204245065),
-        new Stock('YHOO', 53.28, 0.15, 0.62, '11,896,592', 1510204145065)];
+    // this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
+    //     new Stock('MSFT', 73.28, 0.03, -0.62, '11,896,592', 1510204245065),
+    //     new Stock('YHOO', 53.28, 0.15, 0.62, '11,896,592', 1510204145065)];
 
-    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+    // localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
 
   /**
@@ -198,7 +198,7 @@ export class AppComponent {
 
   updateFavoriteList(){
     for (let i in this.favoriteList) {
-      const queryURL = 'http://localhost:12345/?type=price&symbol=' + this.favoriteList[i].symbol;
+      const queryURL = 'http://liuyinstock.us-east-2.elasticbeanstalk.com/price?symbol=' + this.favoriteList[i].symbol;
       this.updateStockData(i, queryURL); //detectChanges() in updateStockData()
     }
   }
@@ -275,6 +275,7 @@ export class AppComponent {
    */
   addToFavorite(){
     let favoriteCheckRes = this.isStockInFavoriteList(this.symbolName);
+
     if(favoriteCheckRes.found){
       //if in favorite List, remove it change ang img to empty-star
       // document.getElementById("btn_fav").className = "glyphicon glyphicon-star-empty";
@@ -294,8 +295,14 @@ export class AppComponent {
    */
   isStockInFavoriteList(symbol){
     this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
-    //console.log(this.favoriteList); 
+    console.log('isStockInFavoriteList'); 
+    console.log(this.favoriteList);
+    
     let found = false, index = -1;
+    if(this.favoriteList === null || this.favoriteList === undefined){
+      return {found, index};
+    }
+
     for(let i = 0; i < this.favoriteList.length; i++) {
         if (this.favoriteList[i].symbol == symbol) {
             found = true;
@@ -459,7 +466,7 @@ export class AppComponent {
     this.inFavoriteList = false;
 
     // let data = await this.service.queryPrice(value);
-    let baseURL = 'http://localhost:12345/?type=price&symbol=';
+    let baseURL = 'http://liuyinstock.us-east-2.elasticbeanstalk.com/price?symbol=';
     console.log("onSubmit: " + baseURL + value);
 
     this.http.get(baseURL + value).subscribe(data => {
@@ -564,7 +571,7 @@ export class AppComponent {
   }
 
   createNewArray(symbol, timeZone){
-    let baseURL = 'http://localhost:12345/?type=news&symbol=';
+    let baseURL = 'http://liuyinstock.us-east-2.elasticbeanstalk.com/news?symbol=';
     console.log("createNewArray: " + baseURL + symbol);
 
     this.http.get(baseURL + symbol).subscribe(data => {
@@ -625,7 +632,7 @@ export class AppComponent {
    * @param indicator 
    */
   drawSingleLineChart(indexMap, symbol, indicator){
-    let baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    let baseURL = "http://liuyinstock.us-east-2.elasticbeanstalk.com/indicator?symbol=" + symbol;
     console.log("drawSingleLineChart: " + baseURL + '&indicator=' + indicator);
     this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
       console.log(data);
@@ -699,7 +706,7 @@ export class AppComponent {
    * @param target3 
    */
   drawMultipleLineChart(indexMap, symbol, indicator, target1, target2, target3){
-    let baseURL = "http://localhost:12345/?type=indicator&symbol=" + symbol;
+    let baseURL = "http://liuyinstock.us-east-2.elasticbeanstalk.com/indicator?symbol=" + symbol;
     let isTwoLine = false;
     if(target3.length == 0)
       isTwoLine = true;
