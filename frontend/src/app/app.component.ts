@@ -131,7 +131,8 @@ export class AppComponent {
 
   ngOnInit(){ 
     //drawLineCharts and draw stock chart in onSubmit()
-    this.onSubmit('AAPL'); //test
+
+    // this.onSubmit('AAPL'); //test
 
     //time use timestamp
     this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
@@ -183,6 +184,11 @@ export class AppComponent {
   }
 
 
+  clear(){
+    this.inFavoriteList = true;
+    // this.switchDivAnimate();
+  }
+
   onInputBlur(){
     console.log(this.searchSymbolName);
     let valid = this.inputValidationCheck(this.searchSymbolName);
@@ -222,10 +228,15 @@ export class AppComponent {
         let prevPrice = this.favoriteList[index].price;
         let temChange = (parseFloat(newOpen) - prevPrice);
         this.favoriteList[index].change = parseFloat(temChange.toFixed(2));
-        this.favoriteList[index].changePercent = parseFloat((temChange / prevPrice * 100).toFixed(2));
+        if(prevPrice === 0)
+          this.favoriteList[index].changePercent = 0.00; //avoid divided by 0
+        else
+          this.favoriteList[index].changePercent = parseFloat((temChange / prevPrice * 100).toFixed(2));
         this.favoriteList[index].price = parseFloat(newOpen);
         this.favoriteList[index].volume = newVolume.replace(/(?=(?:\d{3})+\b)/g, ',');
         
+        //update
+        localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
         //to update UI, if no detectChanges, UI won't change even if date updated
         this.ref.detectChanges(); 
       },
@@ -263,18 +274,17 @@ export class AppComponent {
    * add (or remove) stock to favorite list
    */
   addToFavorite(){
-    let favoriteCheckRes = this.isStockInFavoriteList();
+    let favoriteCheckRes = this.isStockInFavoriteList(this.symbolName);
     
     if(favoriteCheckRes.found){
       //if in favorite List, remove it change ang img to empty-star
       document.getElementById("btn_fav").className = "glyphicon glyphicon-star-empty";
-      this.removeCurrentStockToFavoriteList(favoriteCheckRes.index);
+      this.removeCurrentStockFromFavoriteList(favoriteCheckRes.index);
     }else{
       //else add to favorite List, and change img to star
       document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
       this.addCurrentStockToFavoriteList();
     }
-
     localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
 
@@ -282,12 +292,12 @@ export class AppComponent {
    * check whether current searching stock is in user's favorite list
    * if so, return true and its index; otherwise, return false and -1
    */
-  isStockInFavoriteList(){
+  isStockInFavoriteList(symbol){
     this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
     //console.log(this.favoriteList); 
     let found = false, index = -1;
     for(let i = 0; i < this.favoriteList.length; i++) {
-        if (this.favoriteList[i].symbol == this.symbolName) {
+        if (this.favoriteList[i].symbol == symbol) {
             found = true;
             index = i;
             break;
@@ -300,10 +310,22 @@ export class AppComponent {
    * remove stock at index
    * @param index 
    */
-  removeCurrentStockToFavoriteList(index){
+  removeCurrentStockFromFavoriteList(index){
     this.favoriteList.splice(index, 1);
     console.log(this.favoriteList);
   }
+
+  /**
+   * client trash button call this function to delete stock from favorite list
+   * @param symbol 
+   */
+  removeSpecificStockFromFavoriteList(symbol){
+    console.log("delete: " + symbol);
+    let res = this.isStockInFavoriteList(symbol);
+    this.favoriteList.splice(res.index, 1);
+    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+  }
+
 
   /**
    * add current stock to favorite list
@@ -423,7 +445,10 @@ export class AppComponent {
     if(this.inputValidationCheck(value) == false)
       return;
 
-    this.switchDivAnimate();
+    if(this.inFavoriteList)
+      this.switchDivAnimate();
+    this.inFavoriteList = false;
+
     // let data = await this.service.queryPrice(value);
     let baseURL = 'http://localhost:12345/?type=price&symbol=';
     console.log("onSubmit: " + baseURL + value);
