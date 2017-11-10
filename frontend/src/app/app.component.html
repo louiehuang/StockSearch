@@ -17,7 +17,7 @@
                         <div class="col-sm-6">
                             <input id="input_symbol" name="input_symbol" #stockSymbol (blur)="onInputBlur()"
                                 [matAutocomplete]="auto" required [formControl]="symbol"
-                                style="width: 100%" placeholder="e.g. AAPL" >
+                                style="width: 90%; margin: 0px 5%" placeholder="e.g. AAPL" >
                             <mat-autocomplete (optionSelected)="onSubmit(stockSymbol.value.toUpperCase())"
                                 #auto="matAutocomplete">
                                 <mat-option *ngFor="let symbol of searchResult" [value]="symbol.Symbol">
@@ -48,35 +48,41 @@
             <!-- Favorite List Div -->
             <div *ngIf="inFavoriteList" [@toStockChart]="state">
                 <div class="swich_bar">
-                    <div style="width: 20%; height: 100%; font-size: 17px; padding-top: 8px; padding-left: 15px; font-weight: bold; display: block; float: left">
-                        Favorite List
-                    </div>
-                    <div style="width: 30%; height: 100%; display: block; float: left"></div>
-                    <div style="position: relative; width: 50%; height: 100%; display: block; float: left; text-align: right">
-                        <ul style="position:absolute; right: 15px; bottom:-12px; list-style:none; display:inline; overflow:hidden;">  
-                            <li style="float:left; height: 40px; padding-top: 5px">Automatic Refresh: </li>
-                            <li style="float:left; margin-left: 5px;">
-                                <input id="refreshSwitch" type="checkbox" data-toggle="toggle">    
-                            </li>
-                            <li style="float:left; margin-left: 5px">
-                                <button style="height: 36px; width: 40px" (click)="updateFavoriteList()">
-                                    <span class="glyphicon glyphicon-refresh"></span>
-                                </button>
-                            </li> 
-                            <li style="float:left; margin-left: 5px">
-                                <button id="btn-goStock"
-                                    style="height: 36px; width: 40px;" [disabled]="!existStockInfo" (click)="switchDivAnimate()">
-                                    <span style="right: 3px" class="glyphicon glyphicon-chevron-right"></span>
-                                </button>
-                            </li>
-                        </ul>  
+
+                    <div class="row">
+                        <div class="col-md-6" 
+                            style="height: 100%; font-size: 17px; padding-top: 8px; padding-left: 15px; font-weight: bold;">
+                                Favorite List
+                        </div>
+
+                        <div class="col-md-6">
+                            <div style="position: relative; text-align: right">
+                                <ul class="btn-group-mobile" style="position:absolute; right: 15px; list-style:none; display:inline; overflow:hidden;">  
+                                    <li class="hidden-mobile" style="float:left; height: 40px; padding-top: 5px">Automatic Refresh: </li>
+                                    <li style="float:left; margin-left: 5px;">
+                                        <input id="refreshSwitch" type="checkbox" data-toggle="toggle">    
+                                    </li>
+                                    <li style="float:left; margin-left: 5px">
+                                        <button style="height: 36px; width: 40px" (click)="updateFavoriteList()">
+                                            <span class="glyphicon glyphicon-refresh"></span>
+                                        </button>
+                                    </li> 
+                                    <li style="float:left; margin-left: 5px">
+                                        <button id="btn-goStock"
+                                            style="height: 36px; width: 40px;" [disabled]="!existStockInfo" (click)="switchDivAnimate()">
+                                            <span style="right: 3px" class="glyphicon glyphicon-chevron-right"></span>
+                                        </button>
+                                    </li>
+                                </ul> 
+                            </div> 
+                        </div>
                     </div>
                 </div>  
 
                 <div style="background-color: white">
                     <div style="height: 40px; margin-top: 15px">
                         <div class="row">
-                            <div class="col-md-4" style="margin-left: 30px">
+                            <div class="col-md-4 col-xs-12 margin-mobile">
                                 <label style="width: 20%; float:left; padding-top:4px; font-weight: bold" >Sort by</label>
                                 <select (change)="onSortingKeyChange($event.target.value)"
                                      class="form-control" style="width: 70%; margin-left:5%; float:left" >
@@ -88,16 +94,14 @@
                                     <option value="volume">Volume</option>
                                 </select> 
                             </div>
-
-                            <div class="col-md-4" style="margin-left: 30px">
+                            <div class="col-md-4 col-xs-12 margin-mobile">
                                 <label style="width: 20%; float:left; padding-top:4px; font-weight: bold" >Order</label>
                                 <select [disabled]="orderKey == 'default'" (change)="onSortingRuleChange($event.target.value)"
-                                        class="form-control" style="width: 70%; margin-left:10%; float:left" >
+                                        class="form-control" style="width: 70%; margin-left:5%; float:left" >
                                     <option value="ascending">Ascending</option>
                                     <option value="descending">Descending</option>
                                 </select>   
                             </div>
-                            <div class="col-md-4"></div>
                         </div>
                     </div>
 
@@ -157,9 +161,24 @@
 
                 <div class="top-nav_bar">
                     <ul class="nav nav-pills">
-                    <li class="active"><a data-toggle="tab" href="#home"><span class="glyphicon glyphicon-dashboard"></span> Current Stock</a></li>
-                    <li><a data-toggle="tab" href="#menu_history"><span class="glyphicon glyphicon-stats"></span> Historical Charts</a></li>
-                    <li><a data-toggle="tab" href="#menu_news"><span class="glyphicon glyphicon-link"></span> News Feeds</a></li>
+                        <li class="active">
+                            <a data-toggle="tab" href="#home">
+                                <span class="glyphicon glyphicon-dashboard"></span>
+                                    <div class="hidden-mobile">Current </div>Stock
+                            </a>
+                        </li>
+                        <li>
+                            <a data-toggle="tab" href="#menu_history">
+                                <span class="glyphicon glyphicon-stats"></span> 
+                                    <div class="hidden-mobile">Stock Historical </div>Charts
+                            </a>
+                        </li>
+                        <li>
+                            <a data-toggle="tab" href="#menu_news">
+                                <span class="glyphicon glyphicon-link"></span>
+                                    <div class="hidden-mobile">Charts </div>News<div class="hidden-mobile"> Feeds</div>
+                            </a>
+                        </li>
                     </ul>
                 </div>
 
@@ -455,13 +474,13 @@
                         <div *ngIf="loadingMap['News'] && !errInloadingMap['News']">
                             <div *ngFor="let news of newsArray" style="margin-top:20px; height: 160px; width: 100%; background-color: #EFEFEF;
                                 padding: 20px 20px">
-                                <table>
-                                    <tr style="color:#377BB5; font-size: 20px; height: 50px">
+                                <div class="news_title_font" style="color:#377BB5; font-size: 20px; height: 50px">
                                         <a target="_blank" href="{{news.link}}">{{news.title}}</a>
-                                    </tr>
-                                    <tr style="font-weight: bold; height: 35px">Author: {{news['sa:author_name']}}</tr>
-                                    <tr style="font-weight: bold; height: 35px">Date: {{news.pubDate}}</tr>
-                                </table>
+                                </div>
+                                <div class="news_content_font news-content-margin" style="font-weight: bold; height: 35px">Author: {{news['sa:author_name']}}
+                                </div>
+                                <div class="news_content_font" style="font-weight: bold; height: 35px">Date: {{news.pubDate}}
+                                </div>
                             </div>
                         </div>
                     </div>

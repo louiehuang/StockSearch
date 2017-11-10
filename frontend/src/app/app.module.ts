@@ -20,7 +20,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { OrderModule } from 'ngx-order-pipe';
 import { FacebookModule } from 'ngx-facebook';
 
-declare var require: any;
+declare let require: any;
+export function highchartsFactory() {
+  const hc = require('highcharts/highstock');
+  const dd = require('highcharts/modules/exporting');
+  dd(hc);
+  return hc;
+}
 
 @NgModule({
   declarations: [
@@ -30,18 +36,20 @@ declare var require: any;
     BrowserModule, NgbModule,
     FormsModule, ReactiveFormsModule, MatAutocompleteModule,
     HttpModule,
-    ChartModule.forRoot(
-                        // require('highcharts'),
-                        require('highcharts/highstock'),
-                        require('highcharts/modules/exporting'),
-                        ),
+    ChartModule,
     FacebookModule.forRoot(),
     HttpClientModule,
     MomentModule,
     BrowserAnimationsModule,
     OrderModule
   ],
-  providers: [AppService, ChartsService],
+  providers: [{
+    provide: HighchartsStatic,
+    useFactory: highchartsFactory
+    },
+    AppService, 
+    ChartsService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

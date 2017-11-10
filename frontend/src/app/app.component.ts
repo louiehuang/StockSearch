@@ -156,22 +156,10 @@ export class AppComponent {
     localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
 
-
-  toggleValue:boolean = true;
-  toggleValueChanged(value:boolean) {
-    console.log('toggle changed', this.toggleValue);
-    this.toggleValue = !this.toggleValue;
-  }
-  
   /**
    * if need to get element id, put code here
    */
   ngAfterViewInit(){
-    $('#my-toggle').bootstrapToggle();
-    $('#my-toggle').change((event) => {
-      this.toggleValueChanged(event.target.checked);
-    });
-
     $('#refreshSwitch').bootstrapToggle();
     $('#refreshSwitch').change((event) => {
       // this.toggleValueChange(event.target.checked);
@@ -358,8 +346,6 @@ export class AppComponent {
    */
   updateChartId(value){
     this.chartIdentity = value;
-    console.log(this.chartIdentity);
-    console.log(this.indexMap[this.chartIdentity]);
   }
 
   /**
@@ -501,9 +487,10 @@ export class AppComponent {
         this.lastPrice = parseFloat(prevObj['4. close']).toFixed(2);    
         this.changeNum = (this.curClose - this.lastPrice).toFixed(2);
         this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2) + "%";
-    
+  
         this.loadingMap['Table'] = true;
-        if(this.isStockInFavoriteList(this.symbolName))
+
+        if(this.isStockInFavoriteList(this.symbolName).found == true)
           this.currentStockInFavoriteList = true;
         else
           this.currentStockInFavoriteList = false;
@@ -643,6 +630,12 @@ export class AppComponent {
     this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
       console.log(data);
       let indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      
+      if(indicator_data === undefined){
+        this.errInloadingMap[indicator] = true;
+        return;
+      }
+
       let parseRes = this.chartService.parseSingleTarget(indicator_data, indicator);
       let singleLineCharOption = {
         chart: { zoomType: 'x' },
@@ -714,6 +707,12 @@ export class AppComponent {
     this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
       console.log(data);
       let indicator_data = data['Technical Analysis: ' + indicator]; //full size data
+      
+      if(indicator_data === undefined){
+        this.errInloadingMap[indicator] = true;
+        return;
+      }
+
       let parseRes;
       if(isTwoLine == true)
         parseRes = this.chartService.parseTwoTarget(indicator_data, target1, target2); //SlowD, SlowK

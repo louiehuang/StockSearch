@@ -3,9 +3,10 @@ var https = require('https');
 var url = require('url');
 var xml2js = require('xml2js');
 
-http.createServer((req, res) => {
+var server = http.createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept, X-Requested-With");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Content-Length, Authorization, Accept,X-Requested-With");
+    res.setHeader("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");
 
     //http://localhost:12345/?type=autocomplete&symbol=AAPL
     var q = url.parse(req.url, true).query;
@@ -22,16 +23,19 @@ http.createServer((req, res) => {
     }else if(queryType === "indicator"){
         //http://localhost:12345/?type=indicator&symbol=AAPL&indicator=SMA
         var indicator = q.indicator;
-        console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
+        // console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
         querySingleIndicator(symbol, indicator, res);
         // locallyQuerySingleIndicator(symbol, indicator, res); //local test
     }else if(queryType === "news"){
         //http://localhost:12345/?type=news&symbol=AAPL
         queryNews(symbol, res);
+    } else{
+        res.writeHead(404, {"Content-Type": "text/plain"});
+        res.end("Invalid Format");
     }
-
-}).listen(12345);
-
+});
+var port = process.env.PORT || 12345;
+server.listen(port);
 
 /**
  * auto complete function
@@ -75,7 +79,7 @@ function queryStockPrice(symbol, res){
     //https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=MSFT&outputsize=full&apikey=KAGMK7YPZKV0EYYA
     var baseURL = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=";
     var queryUrl = baseURL + symbol + "&outputsize=full&apikey=KAGMK7YPZKV0EYYA";
-    console.log(queryUrl);
+    // console.log(queryUrl);
     
     https.get(queryUrl, (resp) => {
         let data = '';
@@ -112,7 +116,7 @@ function querySingleIndicator(symbol, indicator, res){
     let baseURL = "https://www.alphavantage.co/query?function=";
     let indicatorURL = baseURL + indicator + "&symbol=" +  symbol +
     "&interval=daily&time_period=10&series_type=close&&apikey=KAGMK7YPZKV0EYYA";
-    console.log(indicatorURL);
+    // console.log(indicatorURL);
     
     https.get(indicatorURL, (resp) => {
         let data = '';
@@ -148,7 +152,7 @@ function queryNews(symbol, res){
     //https://seekingalpha.com/api/sa/combined/AAPL.xml
     let baseURL = "https://seekingalpha.com/api/sa/combined/";
     let newURL = baseURL + symbol + ".xml";
-    console.log(newURL);
+    // console.log(newURL);
     
     https.get(newURL, (resp) => {
         let xmlData = '';
@@ -168,7 +172,7 @@ function queryNews(symbol, res){
                 }else{
                     jsonObject = result;
                     var newsJson = jsonObject['rss']['channel'][0]['item'];
-                    console.log(newsJson.length);
+                    // console.log(newsJson.length);
                     jsonString = JSON.stringify(newsJson);
                     res.writeHead(200, {"Content-Type": "text/json"});
                     res.write(jsonString);
