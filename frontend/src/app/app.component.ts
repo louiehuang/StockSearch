@@ -14,6 +14,7 @@ import { trigger, state, style, transition, animate, keyframes } from '@angular/
 
 import { FacebookService, InitParams, UIParams, UIResponse } from 'ngx-facebook';
 import 'bootstrap-toggle';
+import { BootstrapSwitchComponent } from 'angular2-bootstrap-switch';
 
 declare let $: any;
 
@@ -46,6 +47,13 @@ export class Stock {
 })
 export class AppComponent {
   title = 'Stock Search';
+
+  //switch button
+  onText='ON';
+  offText='OFF';
+  onColor="blue";
+  offColor="gray";
+
   //input is valid (not empty and not only space)
   isInvalidInput: boolean = false; //Input Border
   validQuote: boolean = false; //Get Quete Button
@@ -59,6 +67,10 @@ export class AppComponent {
     // if (this.state === 'favList') { this.state = 'in'; }
     this.state = 'in';
     this.inFavoriteList = !this.inFavoriteList;
+
+    //change sorting rule to default
+    this.orderKey = 'default';
+    this.orderRule = false; //reverse 'false' => ascending order, true for descending
   }
 
   currentStockInFavoriteList: boolean = false;
@@ -148,36 +160,49 @@ export class AppComponent {
 
     // this.onSubmit('AAPL'); //test
 
-    //time use timestamp
-    // this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
-    //     new Stock('MSFT', 73.28, 0.03, -0.62, '11,896,592', 1510204245065),
-    //     new Stock('YHOO', 53.28, 0.15, 0.62, '11,896,592', 1510204145065)];
+    ////time use timestamp
+    this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
+        new Stock('MSFT', 73.28, 0.03, -0.62, '11,896,592', 1510204245065),
+        new Stock('YHOO', 53.28, 0.15, 0.62, '11,896,592', 1510204145065)];
 
-    // localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+  }
+
+  onFlagChange(event){
+    console.log(event);
+    this.autoRefresh = (this.autoRefresh === true ? false : true);
+    if(this.autoRefresh){
+      console.log('start auto refreshing');
+      this.timer = Observable.timer(0, 5000); //delay, period
+      this.subscript = this.timer.subscribe(data=> {
+        this.updateFavoriteList();
+      });
+    }else{
+      console.log('stop auto refreshing');
+      this.subscript.unsubscribe();
+    }
   }
 
   /**
    * if need to get element id, put code here
    */
   ngAfterViewInit(){
-    $('#refreshSwitch').bootstrapToggle();
-    $('#refreshSwitch').change((event) => {
-      // this.toggleValueChange(event.target.checked);
-      this.autoRefresh = (this.autoRefresh === true ? false : true);
-
-      if(this.autoRefresh){
-        console.log('start auto refreshing');
-        this.timer = Observable.timer(0, 5000); //delay, period
-        this.subscript = this.timer.subscribe(data=> {
-          this.updateFavoriteList();
-        });
-      }else{
-        console.log('stop auto refreshing');
-        this.subscript.unsubscribe();
-      }
-    });
+    // $('#refreshSwitch').bootstrapToggle();
+    // $('#refreshSwitch').change((event) => {
+    //   // this.toggleValueChange(event.target.checked);
+    //   this.autoRefresh = (this.autoRefresh === true ? false : true);
+    //   if(this.autoRefresh){
+    //     console.log('start auto refreshing');
+    //     this.timer = Observable.timer(0, 5000); //delay, period
+    //     this.subscript = this.timer.subscribe(data=> {
+    //       this.updateFavoriteList();
+    //     });
+    //   }else{
+    //     console.log('stop auto refreshing');
+    //     this.subscript.unsubscribe();
+    //   }
+    // });
   }
-
 
   clear(){
     this.inFavoriteList = true;
@@ -197,6 +222,11 @@ export class AppComponent {
   }
 
   updateFavoriteList(){
+    if(this.favoriteList === null || this.favoriteList === undefined || this.favoriteList.length === 0){
+      console.log('favoriteList is empty');
+      return;
+    }
+
     for (let i in this.favoriteList) {
       const queryURL = 'http://liuyinstock.us-east-2.elasticbeanstalk.com/price?symbol=' + this.favoriteList[i].symbol;
       this.updateStockData(i, queryURL); //detectChanges() in updateStockData()
@@ -328,9 +358,15 @@ export class AppComponent {
    */
   removeSpecificStockFromFavoriteList(symbol){
     console.log("delete: " + symbol);
+
+    //When delete button clicked, remove stock from the table and favorites list local storage
     let res = this.isStockInFavoriteList(symbol);
     this.favoriteList.splice(res.index, 1);
     localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+
+    //When delete button clicked, the removed stock should not be displayed with yellow star button in other pages
+    if(symbol == this.symbolName)
+      this.currentStockInFavoriteList = false;
   }
 
 
@@ -605,7 +641,7 @@ export class AppComponent {
       },
       rangeSelector: { selected: 1 },
       series: [{
-          name: this.symbolName + ' Stock Price',
+          name: this.symbolName,
           data: parseRes,
           type: 'area',
           threshold: null,

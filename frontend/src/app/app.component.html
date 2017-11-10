@@ -11,26 +11,26 @@
             <form (ngSubmit)="onSubmit(stockSymbol.value.toUpperCase())">
                 <mat-form-field>
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-md-3 col-xs-12">
                             <label>Enter Stock Ticker Symbol:<span style="color: red">*</span></label>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-md-6 col-xs-12">
                             <input id="input_symbol" name="input_symbol" #stockSymbol (blur)="onInputBlur()"
                                 [matAutocomplete]="auto" required [formControl]="symbol"
-                                style="width: 90%; margin: 0px 5%" placeholder="e.g. AAPL" >
+                                style="width: 90%; margin: 0px 5%; padding-left: 6px; height:40px" placeholder="e.g. AAPL" >
                             <mat-autocomplete (optionSelected)="onSubmit(stockSymbol.value.toUpperCase())"
                                 #auto="matAutocomplete">
                                 <mat-option *ngFor="let symbol of searchResult" [value]="symbol.Symbol">
                                 {{ symbol.Symbol }} - {{symbol.Name}} ({{symbol.Exchange}})
                                 </mat-option>
                             </mat-autocomplete>
-                            <div style="text-align: left" *ngIf="isInvalidInput">Please enter a stock ticker symbol</div>
+                            <div style="text-align: left; margin: 0px 5%;" *ngIf="isInvalidInput">Please enter a stock ticker symbol</div>
                         </div>
-                        <div class="col-sm-3">
-                            <button type="submit" [disabled]="!validQuote" class="btn btn-primary" >
+                        <div class="col-md-3 col-xs-12">
+                            <button style="height:40px;" type="submit" [disabled]="!validQuote" class="btn btn-primary" >
                                 <span class="glyphicon glyphicon-search"></span> Get Quote
                             </button>
-                            <button (click)="stockSymbol.value = ''; clear()"
+                            <button style="height:40px;" (click)="stockSymbol.value = ''; clear()"
                                 type="button" class="btn btn-secondary" >
                                 <span class="glyphicon glyphicon-refresh"></span> Clear
                             </button>
@@ -41,14 +41,12 @@
         </div>
     </div>
 
-
     <div class="result_tabs">
         <div style="border: solid 1px #E3E3E3; margin-top: 15px; margin-left: 15px; margin-right:15px">
 
             <!-- Favorite List Div -->
             <div *ngIf="inFavoriteList" [@toStockChart]="state">
                 <div class="swich_bar">
-
                     <div class="row">
                         <div class="col-md-6" 
                             style="height: 100%; font-size: 17px; padding-top: 8px; padding-left: 15px; font-weight: bold;">
@@ -60,7 +58,11 @@
                                 <ul class="btn-group-mobile" style="position:absolute; right: 15px; list-style:none; display:inline; overflow:hidden;">  
                                     <li class="hidden-mobile" style="float:left; height: 40px; padding-top: 5px">Automatic Refresh: </li>
                                     <li style="float:left; margin-left: 5px;">
-                                        <input id="refreshSwitch" type="checkbox" data-toggle="toggle">    
+                                        <!-- <input id="refreshSwitch" type="checkbox" data-toggle="toggle"> -->
+                                        <!-- angular2-bootstrap-switch -->
+                                        <switch [onText]="onText" [offText]="offText" [onColor]="onColor" [offColor]="offColor"
+                                            (statusChange)="onFlagChange($event)">
+                                        </switch>
                                     </li>
                                     <li style="float:left; margin-left: 5px">
                                         <button style="height: 36px; width: 40px" (click)="updateFavoriteList()">

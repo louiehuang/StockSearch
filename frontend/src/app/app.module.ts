@@ -19,6 +19,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { OrderModule } from 'ngx-order-pipe';
 import { FacebookModule } from 'ngx-facebook';
+import { BootstrapSwitchComponent } from 'angular2-bootstrap-switch';
 
 declare let require: any;
 export function highchartsFactory() {
@@ -30,7 +31,7 @@ export function highchartsFactory() {
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent, BootstrapSwitchComponent
   ],
   imports: [
     BrowserModule, NgbModule,
