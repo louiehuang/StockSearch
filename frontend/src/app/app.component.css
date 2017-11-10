@@ -127,3 +127,7 @@
     border: 0;
     background: transparent;
 }
+
+button[disabled] {
+    cursor: not-allowed;
+}

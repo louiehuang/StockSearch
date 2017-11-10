@@ -46,9 +46,14 @@ export class Stock {
 })
 export class AppComponent {
   title = 'Stock Search';
-  isInvalidInput: boolean = false;
+  //input is valid (not empty and not only space)
+  isInvalidInput: boolean = false; //Input Border
+  validQuote: boolean = false; //Get Quete Button
+  //when chart has no data, cannot press btn-goStock
+  existStockInfo: boolean = false;
 
   state: string;
+  //current page is at favorite list
   inFavoriteList: boolean = true;
   switchDivAnimate(){
     // if (this.state === 'favList') { this.state = 'in'; }
@@ -56,7 +61,10 @@ export class AppComponent {
     this.inFavoriteList = !this.inFavoriteList;
   }
 
+  currentStockInFavoriteList: boolean = false;
+
   //record whether data is still been querying, used for process bar
+  //false means data has not been received yet, still processing
   loadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,
   'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 
   'Table': false, 'HighStock': false, 'News': false};
@@ -67,7 +75,7 @@ export class AppComponent {
 
   favoriteList: Stock[]; //fetch from local storage
 
-  orderKey = 'price';
+  orderKey = 'default';
   orderRule = false; //reverse 'false' => ascending order, true for descending
 
   symbol : FormControl = new FormControl();
@@ -99,19 +107,19 @@ export class AppComponent {
   autoRefresh: boolean = false;
   timer; //refresh timer
   subscript: Subscription;
-
   
 
   constructor(private service: AppService, private chartService: ChartsService, private fb: FacebookService,
         private http: HttpClient, private ref: ChangeDetectorRef){ 
     this.symbol.valueChanges
-    .debounceTime(150)
+    .debounceTime(50)
     .subscribe(data => {
       this.searchSymbolName = data;
       if(this.inputValidationCheck(data)){
         //valid
         document.getElementById("input_symbol").className = "";
         this.isInvalidInput = false;
+        this.validQuote = true;
         this.ref.detectChanges();
         this.service.searchSymbol(data).subscribe(response =>{
             console.log(this.searchSymbolName);
@@ -120,6 +128,7 @@ export class AppComponent {
         })
       }else{
         this.isInvalidInput = true;
+        this.validQuote = false;
         document.getElementById("input_symbol").className = "input_error";
         this.searchResult = [];
       }
@@ -158,17 +167,10 @@ export class AppComponent {
    * if need to get element id, put code here
    */
   ngAfterViewInit(){
-    // //if stock user is searching is in his favorite list, change icon
-    var favoriteCheckRes = this.isStockInFavoriteList(this.symbolName);
-    if(favoriteCheckRes.found){
-      document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
-    }
-
     $('#my-toggle').bootstrapToggle();
     $('#my-toggle').change((event) => {
       this.toggleValueChanged(event.target.checked);
     });
-
 
     $('#refreshSwitch').bootstrapToggle();
     $('#refreshSwitch').change((event) => {
@@ -177,7 +179,7 @@ export class AppComponent {
 
       if(this.autoRefresh){
         console.log('start auto refreshing');
-        this.timer = Observable.timer(0, 15000); //delay, period
+        this.timer = Observable.timer(0, 5000); //delay, period
         this.subscript = this.timer.subscribe(data=> {
           this.updateFavoriteList();
         });
@@ -191,7 +193,8 @@ export class AppComponent {
 
   clear(){
     this.inFavoriteList = true;
-    // this.switchDivAnimate();
+    this.existStockInfo = false;
+    this.validQuote = false;
   }
 
   onInputBlur(){
@@ -218,32 +221,36 @@ export class AppComponent {
   updateStockData(index, queryURL){
     console.log('before refresh ' + this.favoriteList[index].symbol + ", " + this.favoriteList[index].price);
     this.http.get(queryURL).subscribe(data => {
-      let meta_data = data['Meta Data']; 
-        let json_series_data = data['Time Series (Daily)']; 
-        let symbol = meta_data['2. Symbol'];
-        let newOpen, newClose, newVolume;
-
-        for (let key in json_series_data) {
-            //just get one data, then break
-            newOpen = json_series_data[key]['1. open'];
-            newClose = json_series_data[key]['4. close'];
-            newVolume = json_series_data[key]['5. volume'];
-            break;
+        try {
+          let meta_data = data['Meta Data']; 
+          let json_series_data = data['Time Series (Daily)']; 
+          let symbol = meta_data['2. Symbol'];
+          let newOpen, newClose, newVolume;
+  
+          for (let key in json_series_data) {
+              //just get one data, then break
+              newOpen = json_series_data[key]['1. open'];
+              newClose = json_series_data[key]['4. close'];
+              newVolume = json_series_data[key]['5. volume'];
+              break;
+          }
+          let prevPrice = this.favoriteList[index].price;
+          let temChange = (parseFloat(newOpen) - prevPrice);
+          this.favoriteList[index].change = parseFloat(temChange.toFixed(2));
+          if(prevPrice === 0)
+            this.favoriteList[index].changePercent = 0.00; //avoid divided by 0
+          else
+            this.favoriteList[index].changePercent = parseFloat((temChange / prevPrice * 100).toFixed(2));
+          this.favoriteList[index].price = parseFloat(newOpen);
+          this.favoriteList[index].volume = newVolume.replace(/(?=(?:\d{3})+\b)/g, ',');
+          
+          //update
+          localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+          //to update UI, if no detectChanges, UI won't change even if date updated
+          this.ref.detectChanges(); 
+        } catch (error) {
+          console.log(error);
         }
-        let prevPrice = this.favoriteList[index].price;
-        let temChange = (parseFloat(newOpen) - prevPrice);
-        this.favoriteList[index].change = parseFloat(temChange.toFixed(2));
-        if(prevPrice === 0)
-          this.favoriteList[index].changePercent = 0.00; //avoid divided by 0
-        else
-          this.favoriteList[index].changePercent = parseFloat((temChange / prevPrice * 100).toFixed(2));
-        this.favoriteList[index].price = parseFloat(newOpen);
-        this.favoriteList[index].volume = newVolume.replace(/(?=(?:\d{3})+\b)/g, ',');
-        
-        //update
-        localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
-        //to update UI, if no detectChanges, UI won't change even if date updated
-        this.ref.detectChanges(); 
       },
       err => {
         console.log(err);
@@ -280,16 +287,16 @@ export class AppComponent {
    */
   addToFavorite(){
     let favoriteCheckRes = this.isStockInFavoriteList(this.symbolName);
-    
     if(favoriteCheckRes.found){
       //if in favorite List, remove it change ang img to empty-star
-      document.getElementById("btn_fav").className = "glyphicon glyphicon-star-empty";
+      // document.getElementById("btn_fav").className = "glyphicon glyphicon-star-empty";
       this.removeCurrentStockFromFavoriteList(favoriteCheckRes.index);
     }else{
       //else add to favorite List, and change img to star
-      document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
+      // document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
       this.addCurrentStockToFavoriteList();
     }
+    this.currentStockInFavoriteList = !this.currentStockInFavoriteList;
     localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
 
@@ -454,6 +461,10 @@ export class AppComponent {
     this.loadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,'ADX': false,
     'CCI': false, 'BBANDS': false, 'MACD': false, 'Table': false, 'HighStock': false, 'News': false};
 
+    this.existStockInfo = true;
+    this.isInvalidInput = false;
+    this.validQuote = false;
+
     if(this.inputValidationCheck(value) == false)
       return;
 
@@ -465,104 +476,101 @@ export class AppComponent {
     let baseURL = 'http://localhost:12345/?type=price&symbol=';
     console.log("onSubmit: " + baseURL + value);
 
-
     this.http.get(baseURL + value).subscribe(data => {
-      let meta_data = data['Meta Data']; 
-      let json_series_data = data['Time Series (Daily)']; 
-      let parseRes = this.chartService.parsePriceData(json_series_data);
-  
-      //update table
-      this.symbolName = value;
-      console.log("onSubmit: " + this.symbolName);
+      try {  
+        let meta_data = data['Meta Data']; 
+        let json_series_data = data['Time Series (Daily)']; 
+        let parseRes = this.chartService.parsePriceData(json_series_data);
+    
+        //update table
+        this.symbolName = value;
+        //YYYY-MM-DD when closed or YYYY-MM-DD HH:mm:ss when open
+        let lastRefreshedTime = meta_data['3. Last Refreshed'].toString();
+        if(lastRefreshedTime.length <= 12) //"2017-11-07"
+          lastRefreshedTime += " 16:00:00";
+        this.timestamp = lastRefreshedTime + " " + this.chartService.getTimeZoneName(lastRefreshedTime, "US/Eastern");
+          
+        //cur day (key) is Object.keys(json_series_data)[0]
+        let curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
+        let prevObj = json_series_data[Object.keys(json_series_data)[1]]; //previous day
+        this.curOpen = parseFloat(curObj['1. open']).toFixed(2);
+        this.curClose = parseFloat(curObj['4. close']).toFixed(2);
+        this.curRange = parseFloat(curObj['3. low']).toFixed(2) + ' - ' + parseFloat(curObj['2. high']).toFixed(2);
+        this.curVolume = curObj['5. volume'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");;
+    
+        this.lastPrice = parseFloat(prevObj['4. close']).toFixed(2);    
+        this.changeNum = (this.curClose - this.lastPrice).toFixed(2);
+        this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2) + "%";
+    
+        this.loadingMap['Table'] = true;
+        if(this.isStockInFavoriteList(this.symbolName))
+          this.currentStockInFavoriteList = true;
+        else
+          this.currentStockInFavoriteList = false;
 
-      // this.timeZone = meta_data['5. Time Zone'];
-      // console.log(this.timeZone);
-
-      //YYYY-MM-DD when closed or YYYY-MM-DD HH:mm:ss when open
-      let lastRefreshedTime = meta_data['3. Last Refreshed'].toString();
-      if(lastRefreshedTime.length <= 12) //"2017-11-07"
-        lastRefreshedTime += " 16:00:00";
-      
-      this.timestamp = lastRefreshedTime + " " + this.chartService.getTimeZoneName(lastRefreshedTime, "US/Eastern");
-        
-      //cur day (key) is Object.keys(json_series_data)[0]
-      let curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
-      let prevObj = json_series_data[Object.keys(json_series_data)[1]]; //previous day
-      this.curOpen = parseFloat(curObj['1. open']).toFixed(2);
-      this.curClose = parseFloat(curObj['4. close']).toFixed(2);
-      this.curRange = parseFloat(curObj['3. low']).toFixed(2) + ' - ' + parseFloat(curObj['2. high']).toFixed(2);
-      this.curVolume = curObj['5. volume'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");;
-  
-      this.lastPrice = parseFloat(prevObj['4. close']).toFixed(2);
-      
-      this.changeNum = (this.curClose - this.lastPrice).toFixed(2);
-      // console.log(((this.changeNum / this.lastPrice) * 100).toFixed(2));
-  
-      this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2) + "%";
-      // this.changeNum = -0.2; //test negative change
-  
-      this.loadingMap['Table'] = true;
-
-      //draw price chart
-      this.priceChartOptions = {
-        chart: { zoomType: 'x', width: null },
-        title: { text: value + ' Stock Price and Volume' },
-        subtitle: {
-            useHTML:true,
-            text:"<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
-        },
-        xAxis: {
-          categories: parseRes.date,
-          tickPositioner: function() {
-              let res = [];
-              for(let i = 0; i < this.categories.length; i++)
-                  if(i % 10 == 0) 
-                      res.push(this.categories.length - 1 - i);
-              return res;
-          }
-        },
-        yAxis: [
-          {
-            title: { text: 'Stock Price' },
-            labels:{ format:'{value:,.2f}' },
+        //draw price chart
+        this.priceChartOptions = {
+          chart: { zoomType: 'x', width: null },
+          title: { text: value + ' Stock Price and Volume' },
+          subtitle: {
+              useHTML:true,
+              text:"<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
           },
-          {
-            title:{ text:'Volume' },
-            opposite:true,
-            max: parseRes.max_volume
-          }
-        ],
-        plotOptions: {
-          area: { lineWidth: 2, states: { hover: { lineWidth: 2 } } }
-        },
-        series: [
-          {
-            type: 'area',
-            name: 'Pirce',
-            data: parseRes.price, //data
-            yAxis:0,
-            tooltip:{ pointFormat: value + ': {point.y:,..2f}' },
-            marker:{ enabled:false },
+          xAxis: {
+            categories: parseRes.date,
+            tickPositioner: function() {
+                let res = [];
+                for(let i = 0; i < this.categories.length; i++)
+                    if(i % 10 == 0) 
+                        res.push(this.categories.length - 1 - i);
+                return res;
+            }
           },
-          {
-            type: 'column',
-            name: 'Volume',
-            data: parseRes.volume,
-            yAxis:1,
-            color: 'red'
-          }
-        ]
-      };
-
-      this.createStockChart(json_series_data);
-      this.loadingMap['Price'] = true;
+          yAxis: [
+            {
+              title: { text: 'Stock Price' },
+              labels:{ format:'{value:,.2f}' },
+            },
+            {
+              title:{ text:'Volume' },
+              opposite:true,
+              max: parseRes.max_volume
+            }
+          ],
+          plotOptions: {
+            area: { lineWidth: 2, states: { hover: { lineWidth: 2 } } }
+          },
+          series: [
+            {
+              type: 'area',
+              name: 'Pirce',
+              data: parseRes.price, //data
+              yAxis:0,
+              tooltip:{ pointFormat: value + ': {point.y:,..2f}' },
+              marker:{ enabled:false },
+            },
+            {
+              type: 'column',
+              name: 'Volume',
+              data: parseRes.volume,
+              yAxis:1,
+              color: 'red'
+            }
+          ]
+        };
+        this.createStockChart(json_series_data);
+        this.loadingMap['Price'] = true; //data loaded
+      } catch (error) {
+        this.errInloadingMap['Pirce'] = true;
+        console.log(error);
+      }
     },
     err => {
       this.errInloadingMap['Price'] = true;
       console.log(err);
     });
 
-    this.createNewArray(value, "US/Eastern");
+    this.createNewArray(value, "US/Eastern"); //request news
     //The order is this.http.get() and drawLineCharts() run simultaneously
     //after onSubmit()'s code finished, then createStockChart() and createNewArray()
     this.drawLineCharts(value);

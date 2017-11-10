@@ -27,7 +27,7 @@
                             <div style="text-align: left" *ngIf="isInvalidInput">Please enter a stock ticker symbol</div>
                         </div>
                         <div class="col-sm-3">
-                            <button type="submit" class="btn btn-primary" >
+                            <button type="submit" [disabled]="!validQuote" class="btn btn-primary" >
                                 <span class="glyphicon glyphicon-search"></span> Get Quote
                             </button>
                             <button (click)="stockSymbol.value = ''; clear()"
@@ -43,64 +43,61 @@
 
 
     <div class="result_tabs">
-
-        <div>
-            <input id="my-toggle"
-                type="checkbox" 
-                [(ngModel)]="toggleValue"
-                data-toggle="toggle" 
-                data-on="ON!!!" 
-                data-off="OFF!!!">
-        </div>
-
         <div style="border: solid 1px #E3E3E3; margin-top: 15px; margin-left: 15px; margin-right:15px">
 
             <!-- Favorite List Div -->
             <div *ngIf="inFavoriteList" [@toStockChart]="state">
                 <div class="swich_bar">
-                    <div style="width: 20%; height: 100%; font-size: 17px; padding-top: 5px; padding-left: 15px; font-weight: bold; display: block; float: left">
+                    <div style="width: 20%; height: 100%; font-size: 17px; padding-top: 8px; padding-left: 15px; font-weight: bold; display: block; float: left">
                         Favorite List
                     </div>
                     <div style="width: 30%; height: 100%; display: block; float: left"></div>
                     <div style="position: relative; width: 50%; height: 100%; display: block; float: left; text-align: right">
-                        <ul style="position:absolute; right: 15px; bottom:-18px; list-style:none; display:inline; overflow:hidden;">  
-                            <li style="float:left; height: 40px;">Automatic Refresh: </li>
+                        <ul style="position:absolute; right: 15px; bottom:-12px; list-style:none; display:inline; overflow:hidden;">  
+                            <li style="float:left; height: 40px; padding-top: 5px">Automatic Refresh: </li>
                             <li style="float:left; margin-left: 5px;">
                                 <input id="refreshSwitch" type="checkbox" data-toggle="toggle">    
                             </li>
                             <li style="float:left; margin-left: 5px">
-                                <button style="height: 37px; width: 40px" (click)="updateFavoriteList()">
+                                <button style="height: 36px; width: 40px" (click)="updateFavoriteList()">
                                     <span class="glyphicon glyphicon-refresh"></span>
                                 </button>
-                            </li>  
+                            </li> 
                             <li style="float:left; margin-left: 5px">
-                                <button style="height: 37px; width: 40px" (click)="switchDivAnimate()">
-                                    <span class="glyphicon glyphicon-chevron-right"></span>
+                                <button id="btn-goStock"
+                                    style="height: 36px; width: 40px;" [disabled]="!existStockInfo" (click)="switchDivAnimate()">
+                                    <span style="right: 3px" class="glyphicon glyphicon-chevron-right"></span>
                                 </button>
                             </li>
                         </ul>  
                     </div>
                 </div>  
 
-                <div style="height: 400px; background-color: white">
+                <div style="background-color: white">
                     <div style="height: 40px; margin-top: 15px">
-                        <div style="float:left; font-weight: bold; margin: 0px 20px">
-                            Sort by
-                            <select (change)="onSortingKeyChange($event.target.value)" class="selectpicker">
-                                <option value="dafault">Default</option>
-                                <option value="symbol">Symbol</option>
-                                <option value="price">Price</option>
-                                <option value="change">Change</option>
-                                <option value="changePercent">Change Percent</option>
-                                <option value="volume">Volume</option>
-                            </select>                            
-                        </div>
-                        <div style="float:left; font-weight: bold; margin: 0px 20px">
-                            Order 
-                            <select (change)="onSortingRuleChange($event.target.value)" class="selectpicker">
-                                <option value="ascending">Ascending</option>
-                                <option value="descending">Descending</option>
-                            </select>   
+                        <div class="row">
+                            <div class="col-md-4" style="margin-left: 30px">
+                                <label style="width: 20%; float:left; padding-top:4px; font-weight: bold" >Sort by</label>
+                                <select (change)="onSortingKeyChange($event.target.value)"
+                                     class="form-control" style="width: 70%; margin-left:5%; float:left" >
+                                    <option value="default">Default</option>
+                                    <option value="symbol">Symbol</option>
+                                    <option value="price">Price</option>
+                                    <option value="change">Change</option>
+                                    <option value="changePercent">Change Percent</option>
+                                    <option value="volume">Volume</option>
+                                </select> 
+                            </div>
+
+                            <div class="col-md-4" style="margin-left: 30px">
+                                <label style="width: 20%; float:left; padding-top:4px; font-weight: bold" >Order</label>
+                                <select [disabled]="orderKey == 'default'" (change)="onSortingRuleChange($event.target.value)"
+                                        class="form-control" style="width: 70%; margin-left:10%; float:left" >
+                                    <option value="ascending">Ascending</option>
+                                    <option value="descending">Descending</option>
+                                </select>   
+                            </div>
+                            <div class="col-md-4"></div>
                         </div>
                     </div>
 
@@ -115,7 +112,10 @@
                             <th></th>
                         </tr>
                         <tr *ngFor="let favStock of favoriteList | orderBy : orderKey: orderRule">
-                            <td>{{favStock.symbol}}</td>
+                            <td>
+                                <a href="javascript:void(0)" style="text-decoration: none"
+                                (click)="onSubmit(favStock.symbol)">{{favStock.symbol}}</a>
+                            </td>
                             <td>{{favStock.price}}</td>
                             <td *ngIf="favStock.change >= 0" style="color:green">
                                 {{favStock.change}} ({{favStock.changePercent}}%)
@@ -191,7 +191,15 @@
                                                         style="width: 25px; height: 25px; margin-top:1px"/>
                                                 </button>
                                             </div>
-                                            <div class="icon_wrap">
+                                            <div *ngIf="currentStockInFavoriteList" class="icon_wrap">
+                                                <button class="icon-button" (click)="addToFavorite()">
+                                                    <span id="btn_fav" 
+                                                        style="color: #FDD445; font-size: 20px; margin-left:3px; margin-top:3px" 
+                                                        class="glyphicon glyphicon-star">
+                                                    </span>
+                                                </button>
+                                            </div>
+                                            <div *ngIf="!currentStockInFavoriteList" class="icon_wrap">
                                                 <button class="icon-button" (click)="addToFavorite()">
                                                     <span id="btn_fav" 
                                                         style="color: #FDD445; font-size: 20px; margin-left:3px; margin-top:3px" 
