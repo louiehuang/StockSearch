@@ -56,10 +56,14 @@ export class AppComponent {
     this.inFavoriteList = !this.inFavoriteList;
   }
 
-  //record whether data has been receievd
+  //record whether data is still been querying, used for process bar
   loadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,
   'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 
   'Table': false, 'HighStock': false, 'News': false};
+
+  //record whetehr error occurs in data querying, used for alert (error handling)
+  errInloadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,
+  'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 'News': false};
 
   favoriteList: Stock[]; //fetch from local storage
 
@@ -95,6 +99,7 @@ export class AppComponent {
   autoRefresh: boolean = false;
   timer; //refresh timer
   subscript: Subscription;
+
   
 
   constructor(private service: AppService, private chartService: ChartsService, private fb: FacebookService,
@@ -154,10 +159,10 @@ export class AppComponent {
    */
   ngAfterViewInit(){
     // //if stock user is searching is in his favorite list, change icon
-    // var favoriteCheckRes = this.isStockInFavoriteList();
-    // if(favoriteCheckRes.found){
-    //   document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
-    // }
+    var favoriteCheckRes = this.isStockInFavoriteList(this.symbolName);
+    if(favoriteCheckRes.found){
+      document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
+    }
 
     $('#my-toggle').bootstrapToggle();
     $('#my-toggle').change((event) => {
@@ -384,7 +389,7 @@ export class AppComponent {
           alert('Shared Successfully');
           console.log(res);
         }).catch((e: any) => {
-          alert('Canceled');
+          alert('Not Posted');
           // console.error(e);
         });
     },
@@ -442,6 +447,13 @@ export class AppComponent {
    * @param value 
    */
   async onSubmit(value) {
+    //reset to false (no err in fetching data)
+    this.errInloadingMap= {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,'ADX': false,
+    'CCI': false, 'BBANDS': false, 'MACD': false, 'News': false};
+    //set to false, (still waiting for data coming)
+    this.loadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,'ADX': false,
+    'CCI': false, 'BBANDS': false, 'MACD': false, 'Table': false, 'HighStock': false, 'News': false};
+
     if(this.inputValidationCheck(value) == false)
       return;
 
@@ -453,9 +465,6 @@ export class AppComponent {
     let baseURL = 'http://localhost:12345/?type=price&symbol=';
     console.log("onSubmit: " + baseURL + value);
 
-    //set to false, wait for loading data
-    this.loadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,'ADX': false,
-    'CCI': false, 'BBANDS': false, 'MACD': false, 'Table': false, 'HighStock': false, 'News': false};
 
     this.http.get(baseURL + value).subscribe(data => {
       let meta_data = data['Meta Data']; 
@@ -466,15 +475,15 @@ export class AppComponent {
       this.symbolName = value;
       console.log("onSubmit: " + this.symbolName);
 
-      this.timeZone = meta_data['5. Time Zone'];
-      console.log(this.timeZone);
+      // this.timeZone = meta_data['5. Time Zone'];
+      // console.log(this.timeZone);
 
       //YYYY-MM-DD when closed or YYYY-MM-DD HH:mm:ss when open
       let lastRefreshedTime = meta_data['3. Last Refreshed'].toString();
       if(lastRefreshedTime.length <= 12) //"2017-11-07"
         lastRefreshedTime += " 16:00:00";
       
-      this.timestamp = lastRefreshedTime + " " + this.chartService.getTimeZoneName(lastRefreshedTime, this.timeZone);
+      this.timestamp = lastRefreshedTime + " " + this.chartService.getTimeZoneName(lastRefreshedTime, "US/Eastern");
         
       //cur day (key) is Object.keys(json_series_data)[0]
       let curObj = json_series_data[Object.keys(json_series_data)[0]]; //current day
@@ -546,13 +555,14 @@ export class AppComponent {
       };
 
       this.createStockChart(json_series_data);
-      //have to put createNewArray inside this https.get() to get timeZone
-      //If put outsize this function, this.timeZone is undefined...
-      this.createNewArray(value, this.timeZone);
-
       this.loadingMap['Price'] = true;
+    },
+    err => {
+      this.errInloadingMap['Price'] = true;
+      console.log(err);
     });
 
+    this.createNewArray(value, "US/Eastern");
     //The order is this.http.get() and drawLineCharts() run simultaneously
     //after onSubmit()'s code finished, then createStockChart() and createNewArray()
     this.drawLineCharts(value);
@@ -568,6 +578,11 @@ export class AppComponent {
       this.newsArray = this.chartService.parseNew(data, timeZone, limit); //jsonObj
       console.log(this.newsArray);
       this.loadingMap['News'] = true;
+    },
+    err => {
+      this.errInloadingMap['News'] = true;
+      console.log(err);
+      console.log("error in query news: " + this.errInloadingMap['News']);
     });
   }
 
@@ -666,6 +681,10 @@ export class AppComponent {
         case 6:{ this.CCIChartOptions = singleLineCharOption; break; }
       }
       this.loadingMap[indicator] = true;
+    },
+    err => {
+      this.errInloadingMap[indicator] = true;
+      console.log(err);
     });
   }
   
@@ -748,6 +767,10 @@ export class AppComponent {
       }
     
       this.loadingMap[indicator] = true;
+    },
+    err => {
+      this.errInloadingMap[indicator] = true;
+      console.log(err);
     });
   }
 }

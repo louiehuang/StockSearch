@@ -170,12 +170,18 @@
                     <div id="home" class="tab-pane fade in active">
                         <div class="row" style="margin-top: 20px">
                             <div class="col-md-6">
-                                <div id="stockTableProcessing" *ngIf="!loadingMap['Table']" 
+                                <div *ngIf="errInloadingMap['Price']">
+                                    <div class="alert alert-danger" style="margin-top: 120px">
+                                        Error! Failed to get current stock data.
+                                    </div>
+                                </div>
+
+                                <div id="stockTableProcessing" *ngIf="!loadingMap['Table'] && !errInloadingMap['Price']" 
                                     style="height: 25px; margin-top: 120px" class="progress">
                                     <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                 </div>
 
-                                <div id="stockTable" *ngIf="loadingMap['Table']">
+                                <div id="stockTable" *ngIf="loadingMap['Table'] && !errInloadingMap['Price']">
                                     <div style="height: 35px">
                                         <div style="float:left; font-weight: bold; padding: 10px">Stock Details</div>
                                         <div style="float:right; text-align: right">
@@ -264,11 +270,16 @@
 
                                 <div class="tab-content">
                                     <div id="chart_price" class="tab-pane fade in active">
-                                        <div id="priceChartProcessing" *ngIf="!loadingMap['Price']" 
+                                        <div *ngIf="errInloadingMap['Price']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get Price data.
+                                            </div>
+                                        </div>
+                                        <div id="priceChartProcessing" *ngIf="!loadingMap['Price'] && !errInloadingMap['Price']" 
                                             style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div id="stockPriceChart" *ngIf="loadingMap['Price']">
+                                        <div id="stockPriceChart" *ngIf="loadingMap['Price'] && !errInloadingMap['Price']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="priceChartOptions"></chart>
                                             </div>
@@ -276,20 +287,31 @@
                                     </div>
 
                                     <div id="indicator_SMA" class="tab-pane fade">
-                                        <div *ngIf="!loadingMap['SMA']" style="height: 25px; margin-top: 33px" class="progress">
+                                        <div *ngIf="errInloadingMap['SMA']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get SMA data.
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!loadingMap['SMA'] && !errInloadingMap['SMA']" style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div *ngIf="loadingMap['SMA']">
+                                        <div *ngIf="loadingMap['SMA'] && !errInloadingMap['SMA']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="SMAChartOptions"></chart>
                                             </div>
                                         </div>
                                     </div>
+
                                     <div id="indicator_EMA" class="tab-pane fade">
-                                        <div *ngIf="!loadingMap['EMA']" style="height: 25px; margin-top: 33px" class="progress">
+                                        <div *ngIf="errInloadingMap['EMA']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get EMA data.
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!loadingMap['EMA'] && !errInloadingMap['EMA']" style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div *ngIf="loadingMap['EMA']">
+                                        <div *ngIf="loadingMap['EMA'] && !errInloadingMap['EMA']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="EMAChartOptions"></chart>
                                             </div>
@@ -297,10 +319,15 @@
                                     </div>
 
                                     <div id="indicator_STOCH" class="tab-pane fade">
-                                        <div *ngIf="!loadingMap['STOCH']" style="height: 25px; margin-top: 33px" class="progress">
+                                        <div *ngIf="errInloadingMap['STOCH']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get STOCH data.
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!loadingMap['STOCH'] && !errInloadingMap['STOCH']" style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div *ngIf="loadingMap['STOCH']">
+                                        <div *ngIf="loadingMap['STOCH'] && !errInloadingMap['STOCH']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="STOCHChartOptions"></chart>
                                             </div>
@@ -308,30 +335,47 @@
                                     </div>
 
                                     <div id="indicator_RSI" class="tab-pane fade">
-                                        <div *ngIf="!loadingMap['RSI']" style="height: 25px; margin-top: 33px" class="progress">
+                                        <div *ngIf="errInloadingMap['RSI']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get RSI data.
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!loadingMap['RSI'] && !errInloadingMap['RSI']" style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div *ngIf="loadingMap['RSI']">
+                                        <div *ngIf="loadingMap['RSI'] && !errInloadingMap['RSI']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="RSIChartOptions"></chart>
                                             </div>
                                         </div>
                                     </div>
+
                                     <div id="indicator_ADX" class="tab-pane fade">
-                                        <div *ngIf="!loadingMap['ADX']" style="height: 25px; margin-top: 33px" class="progress">
+                                        <div *ngIf="errInloadingMap['ADX']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get ADX data.
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!loadingMap['ADX'] && !errInloadingMap['ADX']" style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div *ngIf="loadingMap['ADX']">
+                                        <div *ngIf="loadingMap['ADX'] && !errInloadingMap['ADX']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="ADXChartOptions"></chart>
                                             </div>
                                         </div>
                                     </div>
+
                                     <div id="indicator_CCI" class="tab-pane fade">
-                                        <div *ngIf="!loadingMap['CCI']" style="height: 25px; margin-top: 33px" class="progress">
+                                        <div *ngIf="errInloadingMap['CCI']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get CCI data.
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!loadingMap['CCI'] && !errInloadingMap['CCI']" style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div *ngIf="loadingMap['CCI']">
+                                        <div *ngIf="loadingMap['CCI'] && !errInloadingMap['CCI']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="CCIChartOptions"></chart>
                                             </div>
@@ -339,20 +383,30 @@
                                     </div>
 
                                     <div id="indicator_BBANDS" class="tab-pane fade">
-                                        <div *ngIf="!loadingMap['BBANDS']" style="height: 25px; margin-top: 33px" class="progress">
+                                        <div *ngIf="errInloadingMap['BBANDS']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get BBANDS data.
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!loadingMap['BBANDS'] && !errInloadingMap['BBANDS']" style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div *ngIf="loadingMap['BBANDS']">
+                                        <div *ngIf="loadingMap['BBANDS'] && !errInloadingMap['BBANDS']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="BBANDSChartOptions"></chart>
                                             </div>
                                         </div>
                                     </div>
                                     <div id="indicator_MACD" class="tab-pane fade">
-                                        <div *ngIf="!loadingMap['MACD']" style="height: 25px; margin-top: 33px" class="progress">
+                                        <div *ngIf="errInloadingMap['MACD']">
+                                            <div class="alert alert-danger" style="margin-top: 33px">
+                                                Error! Failed to get MACD data.
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!loadingMap['MACD'] && !errInloadingMap['MACD']" style="height: 25px; margin-top: 33px" class="progress">
                                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                                         </div>
-                                        <div *ngIf="loadingMap['MACD']">
+                                        <div *ngIf="loadingMap['MACD'] && !errInloadingMap['MACD']">
                                             <div class="detail_wrapper">
                                                 <chart [options]="MACDChartOptions"></chart>
                                             </div>
@@ -365,10 +419,15 @@
                 
 
                     <div id="menu_history" class="tab-pane fade">
-                        <div *ngIf="!loadingMap['HighStock']" style="height: 25px; margin-top: 33px" class="progress">
+                        <div *ngIf="errInloadingMap['Price']">
+                            <div class="alert alert-danger" style="margin-top: 33px">
+                                Error! Failed to get Historical data.
+                            </div>
+                        </div>
+                        <div *ngIf="!loadingMap['HighStock'] && !errInloadingMap['Price']" style="height: 25px; margin-top: 33px" class="progress">
                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                         </div>
-                        <div *ngIf="loadingMap['HighStock']">
+                        <div *ngIf="loadingMap['HighStock'] && !errInloadingMap['Price']">
                             <div style="margin-top:20px">
                                 <chart type="StockChart" [options]="stockChartOptions"></chart>
                             </div>
@@ -377,10 +436,15 @@
 
 
                     <div id="menu_news" class="tab-pane fade">
-                        <div *ngIf="!loadingMap['News']" style="height: 25px; margin-top: 33px" class="progress">
+                        <div *ngIf="errInloadingMap['News']">
+                            <div class="alert alert-danger" style="margin-top: 33px">
+                                Error! Failed to get News.
+                            </div>
+                        </div>
+                        <div *ngIf="!loadingMap['News'] && !errInloadingMap['News']" style="height: 25px; margin-top: 33px" class="progress">
                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                         </div>
-                        <div *ngIf="loadingMap['News']">
+                        <div *ngIf="loadingMap['News'] && !errInloadingMap['News']">
                             <div *ngFor="let news of newsArray" style="margin-top:20px; height: 160px; width: 100%; background-color: #EFEFEF;
                                 padding: 20px 20px">
                                 <table>

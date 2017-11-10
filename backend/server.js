@@ -28,7 +28,6 @@ http.createServer((req, res) => {
     }else if(queryType === "news"){
         //http://localhost:12345/?type=news&symbol=AAPL
         queryNews(symbol, res);
-        // locallyQueryNews(symbol, res); //local test
     }
 
 }).listen(12345);
@@ -51,12 +50,14 @@ function queryFullSymbolName(symbol, res){
         });
         // The whole response has been received.
         resp.on('end', () => {
-            // console.log(JSON.parse(data).explanation);
-            jsonObject = JSON.parse(data);
-            // console.log(jsonObject);
-            result = JSON.stringify(jsonObject);
-            res.writeHead(200, {"Content-Type": "text/json"});
-            res.write(result);
+            try {
+                jsonObject = JSON.parse(data);
+                result = JSON.stringify(jsonObject);
+                res.writeHead(200, {"Content-Type": "text/json"});
+                res.write(result);
+            } catch (error) {
+                res.writeHead(404, {"Content-Type": "text/json"});
+            }
             res.end();
         });
     }).on("error", (err) => {
@@ -82,14 +83,19 @@ function queryStockPrice(symbol, res){
             data += chunk;
         });
         resp.on('end', () => {
-            jsonObject = JSON.parse(data);
-            // console.log(jsonObject);
-            result = JSON.stringify(jsonObject);
-            res.writeHead(200, {"Content-Type": "text/json"});
-            res.write(result);
+            try {
+                jsonObject = JSON.parse(data);
+                result = JSON.stringify(jsonObject);
+                res.writeHead(200, {"Content-Type": "text/json"});
+                res.write(result);
+            } catch (error) {
+                res.writeHead(404, {"Content-Type": "text/json"});
+            }
             res.end();
         });
     }).on("error", (err) => {
+        res.writeHead(404, {"Content-Type": "text/json"});
+        res.end();
         console.log("Error: " + err.message);
     });
 }
@@ -121,10 +127,13 @@ function querySingleIndicator(symbol, indicator, res){
                 res.write(result);
                 res.end();
             } catch (error) {
-                console.log("parse Error: " + error);
+                res.writeHead(404, {"Content-Type": "text/json"});
+                // console.log("parse Error: " + error);
             }
         });
     }).on("error", (err) => {
+        res.writeHead(404, {"Content-Type": "text/json"});
+        res.end();
         console.log("Error: " + err.message);
     });
 }
@@ -147,26 +156,29 @@ function queryNews(symbol, res){
             xmlData += chunk;
         });
         resp.on('end', () => {
-            try {
-                //xmlData is xml object now, convert is to json
-                // console.log(xmlData);
-                var parser = new xml2js.Parser();
-                var jsonObject;
-                parser.parseString(xmlData, (err, result) => {
+            //xmlData is xml object now, convert is to json
+            // console.log(xmlData);
+            var parser = new xml2js.Parser();
+            var jsonObject;
+            parser.parseString(xmlData, (err, result) => {
+                if(err){
+                    res.writeHead(404, {"Content-Type": "text/json"});
+                    res.end();
+                    console.log("parse Error: " + err);
+                }else{
                     jsonObject = result;
-                });
-
-                var newsJson = jsonObject['rss']['channel'][0]['item'];
-                console.log(newsJson.length);
-                jsonString = JSON.stringify(newsJson);
-                res.writeHead(200, {"Content-Type": "text/json"});
-                res.write(jsonString);
-                res.end();
-            } catch (error) {
-                console.log("parse Error: " + error);
-            }
+                    var newsJson = jsonObject['rss']['channel'][0]['item'];
+                    console.log(newsJson.length);
+                    jsonString = JSON.stringify(newsJson);
+                    res.writeHead(200, {"Content-Type": "text/json"});
+                    res.write(jsonString);
+                    res.end();
+                }
+            });
         });
     }).on("error", (err) => {
+        res.writeHead(404, {"Content-Type": "text/json"});
+        res.end();
         console.log("Error: " + err.message);
     });
 }
@@ -181,43 +193,28 @@ function queryNews(symbol, res){
  */
 function locallyQueryStockPrice(symbol, res){
     var fs = require('fs');
-    var data = JSON.parse(fs.readFileSync("stockDetails/" + symbol + ".json"));
-    result = JSON.stringify(data);
-    res.writeHead(200, {"Content-Type": "text/json"});
-    res.write(result);
+    try {
+        var data = JSON.parse(fs.readFileSync("stockDetails/" + symbol + ".json"));
+        result = JSON.stringify(data);
+        res.writeHead(200, {"Content-Type": "text/json"});
+        res.write(result);
+    } catch (error) {
+        res.writeHead(404, {"Content-Type": "text/json"});
+    }
     res.end();
 }
 
 
 function locallyQuerySingleIndicator(symbol, indicator, res){
     var fs = require('fs');
-    var data = JSON.parse(fs.readFileSync("stockDetails/" + indicator + ".json"));
-    result = JSON.stringify(data);
-    res.writeHead(200, {"Content-Type": "text/json"});
-    res.write(result);
+    try {
+        var data = JSON.parse(fs.readFileSync("stockDetails/" + indicator + ".json"));
+        result = JSON.stringify(data);
+        res.writeHead(200, {"Content-Type": "text/json"});
+        res.write(result);    
+    } catch (error) {
+        res.writeHead(404, {"Content-Type": "text/json"});
+    }
+    // res.writeHead(404, {"Content-Type": "text/json"});
     res.end();
 }
-
-
-
-function locallyQueryNews(symbol, res){
-    //https://seekingalpha.com/api/sa/combined/AAPL.xml
-
-    var fs = require('fs');
-    var data = JSON.parse(fs.readFileSync("stockDetails/" + symbol + ".xml"));
-    result = JSON.stringify(data);
-
-    var parser = new xml2js.Parser();
-    var jsonObject;
-    parser.parseString(xmlData, (err, result) => {
-        jsonObject = result;
-    });
-
-    var newsJson = jsonObject['rss']['channel'][0]['item'];
-    console.log(newsJson.length);
-    jsonString = JSON.stringify(newsJson);
-    res.writeHead(200, {"Content-Type": "text/json"});
-    res.write(jsonString);
-    res.end();
-}
-
