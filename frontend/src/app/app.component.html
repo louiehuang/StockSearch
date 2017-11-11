@@ -26,7 +26,7 @@
                             </mat-autocomplete>
                             <div style="text-align: left; margin: 0px 5%;" *ngIf="isInvalidInput">Please enter a stock ticker symbol</div>
                         </div>
-                        <div class="col-md-3 col-xs-12">
+                        <div class="col-md-3 col-xs-12 search-btn-wrap-mobile">
                             <button style="height:40px;" type="submit" [disabled]="!validQuote" class="btn btn-primary" >
                                 <span class="glyphicon glyphicon-search"></span> Get Quote
                             </button>
@@ -47,37 +47,34 @@
             <!-- Favorite List Div -->
             <div *ngIf="inFavoriteList" [@toStockChart]="state">
                 <div class="swich_bar">
-                    <div class="row">
-                        <div class="col-md-6" 
-                            style="height: 100%; font-size: 17px; padding-top: 8px; padding-left: 15px; font-weight: bold;">
+                        <div class="col-fav-nav-mobile-1"
+                            style="height: 100%; padding-top: 8px; font-weight: bold;">
                                 Favorite List
                         </div>
 
-                        <div class="col-md-6">
-                            <div style="position: relative; text-align: right">
-                                <ul class="btn-group-mobile" style="position:absolute; right: 15px; list-style:none; display:inline; overflow:hidden;">  
-                                    <li class="hidden-mobile" style="float:left; height: 40px; padding-top: 5px">Automatic Refresh: </li>
-                                    <li style="float:left; margin-left: 5px;">
-                                        <!-- <input id="refreshSwitch" type="checkbox" data-toggle="toggle"> -->
-                                        <!-- angular2-bootstrap-switch -->
-                                        <switch [onText]="onText" [offText]="offText" [onColor]="onColor" [offColor]="offColor"
-                                            (statusChange)="onFlagChange($event)">
-                                        </switch>
-                                    </li>
-                                    <li style="float:left; margin-left: 5px">
-                                        <button style="height: 36px; width: 40px" (click)="updateFavoriteList()">
-                                            <span class="glyphicon glyphicon-refresh"></span>
-                                        </button>
-                                    </li> 
-                                    <li style="float:left; margin-left: 5px">
-                                        <button id="btn-goStock"
-                                            style="height: 36px; width: 40px;" [disabled]="!existStockInfo" (click)="switchDivAnimate()">
-                                            <span style="right: 3px" class="glyphicon glyphicon-chevron-right"></span>
-                                        </button>
-                                    </li>
-                                </ul> 
-                            </div> 
-                        </div>
+                        <div class="col-fav-nav-mobile-2">
+                            <ul class="btn-group-mobile">  
+                                <li class="hidden-mobile" style="float:left; height: 40px;">Automatic Refresh: </li>
+                                <li class="btn-group-li-mobile">
+                                    <!-- <input id="refreshSwitch" type="checkbox" data-toggle="toggle"> -->
+                                    <!-- angular2-bootstrap-switch -->
+                                    <switch [size]="switchSize"
+                                        [onText]="onText" [offText]="offText" [onColor]="onColor" [offColor]="offColor"
+                                        (statusChange)="onFlagChange($event)">
+                                    </switch>
+                                </li>
+                                <li class="btn-group-li-mobile">
+                                    <button style="height: 30px; width: 35px" (click)="updateFavoriteList()">
+                                        <span class="glyphicon glyphicon-refresh"></span>
+                                    </button>
+                                </li> 
+                                <li class="btn-group-li-mobile">
+                                    <button id="btn-goStock"
+                                        style="height: 30px; width: 35px;" [disabled]="!existStockInfo" (click)="switchDivAnimate()">
+                                        <span class="glyphicon glyphicon-chevron-right"></span>
+                                    </button>
+                                </li>
+                            </ul> 
                     </div>
                 </div>  
 
@@ -474,15 +471,12 @@
                             <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width:50%"></div>
                         </div>
                         <div *ngIf="loadingMap['News'] && !errInloadingMap['News']">
-                            <div *ngFor="let news of newsArray" style="margin-top:20px; height: 160px; width: 100%; background-color: #EFEFEF;
-                                padding: 20px 20px">
-                                <div class="news_title_font" style="color:#377BB5; font-size: 20px; height: 50px">
+                            <div *ngFor="let news of newsArray" class="new-content-wrap-mobile">
+                                <div class="news_title_font" style="color:#377BB5; font-size: 20px;">
                                         <a target="_blank" href="{{news.link}}">{{news.title}}</a>
                                 </div>
-                                <div class="news_content_font news-content-margin" style="font-weight: bold; height: 35px">Author: {{news['sa:author_name']}}
-                                </div>
-                                <div class="news_content_font" style="font-weight: bold; height: 35px">Date: {{news.pubDate}}
-                                </div>
+                                <div class="news_content_font news-content-margin">Author: {{news['sa:author_name']}} </div>
+                                <div class="news_content_font" style="margin-top:15px">Date: {{news.pubDate}} </div>
                             </div>
                         </div>
                     </div>

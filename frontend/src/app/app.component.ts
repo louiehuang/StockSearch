@@ -1,20 +1,16 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { AppService } from './app.service';
 import { ChartsService } from './charts.service';
-
 import { Observable, Subscription } from 'rxjs/Rx';
 import { FormControl } from '@angular/forms';
 import 'rxjs/add/operator/startWith';
 import 'rxjs/add/operator/debounceTime';
 import 'rxjs/add/operator/map';
-
-import { configs } from './configs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
-
 import { FacebookService, InitParams, UIParams, UIResponse } from 'ngx-facebook';
-import 'bootstrap-toggle';
 import { BootstrapSwitchComponent } from 'angular2-bootstrap-switch';
+// import 'bootstrap-toggle';
 
 declare let $: any;
 
@@ -53,6 +49,7 @@ export class AppComponent {
   offText='OFF';
   onColor="blue";
   offColor="gray";
+  switchSize="small";
 
   //input is valid (not empty and not only space)
   isInvalidInput: boolean = false; //Input Border
