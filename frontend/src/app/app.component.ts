@@ -318,6 +318,9 @@ export class AppComponent {
     this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
     let found = false, index = -1;
     if(this.favoriteList === null || this.favoriteList === undefined || this.favoriteList.length === 0){
+      //create new favorite list
+      this.favoriteList = [];
+      localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
       return {found, index}; //false, -1
     }
     for(let i = 0; i < this.favoriteList.length; i++) {
