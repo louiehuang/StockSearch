@@ -378,18 +378,24 @@ export class AppComponent {
       case 7:{ chartOptions = JSON.stringify(this.BBANDSChartOptions); break; }
       case 8:{ chartOptions = JSON.stringify(this.MACDChartOptions); break; }
     }
-    let imgURL = encodeURI('async=false&type=jpeg&width=600&options=' + chartOptions);
-    let exportImgURL = 'http://export.highcharts.com/';
+    let imgURL = encodeURI('async=false&type=jpeg&width=600&options=' + chartOptions); //body
+    console.log(imgURL);
+    console.log(imgURL.length);
+    
+    // let exportImgURL = this.serverURL + "/postImg";
+    let exportImgURL = "http://localhost:3000/postImg";
 
+    //post to server
     this.http.post(exportImgURL, imgURL, {
       responseType: 'text',
       headers: new HttpHeaders().set('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8')
                 .append('accept', '*/*')
     }).subscribe(res => {
-      console.log(exportImgURL + res);
+      //res looks like "http://export.highcharts.com/charts/chart.472758adeb194a56a54b4479c63810eb.png"
+      console.log(res);
       let params: UIParams = {
         method: 'feed',
-        link: exportImgURL + res  //Full URL
+        link: res  //Full URL
       }
       this.fb.ui(params)
         .then((res: UIResponse) => {
@@ -403,6 +409,8 @@ export class AppComponent {
       err =>{
         // console.log(err);
     });
+
+
   }
 
 

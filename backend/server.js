@@ -2,38 +2,74 @@ var http = require('http');
 var https = require('https');
 var url = require('url');
 var xml2js = require('xml2js');
+// var qs = require('querystring');
+var request = require('request');
 
+//nodemon ./server.js
 var server = http.createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Content-Length, Authorization, Accept,X-Requested-With");
     res.setHeader("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");
 
-    //http://localhost:12345/autocomplete?symbol=AAPL
-    var q = url.parse(req.url, true).query;
-    var pathName = url.parse(req.url, true).pathname;
-    var symbol = q.symbol;
+    if(req.method == 'POST'){
+        //http://localhost:3000/postImg
+        var post_content = '';
+        req.on('data', function (data) {
+            post_content += data;
+        });
+        req.on('end',function(){
+            request.post({
+                headers: {'Content-Type' : 'application/x-www-form-urlencoded; charset=UTF-8', 'Accept' : '*/*'},    
+                url:     'http://export.highcharts.com/',
+                body:    post_content
+            }, function(error, response, body){
+                if(error){
+                    res.writeHead(404, {"Content-Type": "text/json"});
+                    res.end();
+                }
+                // console.log(body); //charts/chart.fdd5bdc47cbe49c2b0f2c25b38f61b6e.png
+                res.writeHead(200, {"Content-Type": "text/json"});
+                res.write('http://export.highcharts.com/' + body);
+                res.end();
+            });
 
-    console.log(pathName + ", " + symbol);
-
-    if(pathName === "/autocomplete"){
-        //http://localhost:12345/autocomplete?symbol=AAPL
-        queryFullSymbolName(symbol, res);
-    }else if(pathName === "/price"){
-        //http://localhost:12345/price?symbol=AAPL
-        queryStockPrice(symbol, res);
-        // locallyQueryStockPrice(symbol, res); //local test
-    }else if(pathName === "/indicator"){
-        //http://localhost:12345/indicator?symbol=AAPL&indicator=SMA
-        var indicator = q.indicator;
-        // console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
-        querySingleIndicator(symbol, indicator, res);
-        // locallyQuerySingleIndicator(symbol, indicator, res); //local test
-    }else if(pathName === "/news"){
-        //http://localhost:12345/news?symbol=AAPL
-        queryNews(symbol, res);
-    } else{
-        res.writeHead(404, {"Content-Type": "text/plain"});
-        res.end("Invalid Format");
+            // var jsonObj = qs.parse(post_content);
+            // request.post({
+            //     headers: {'content-type':'application/json'},
+            //     url:     'http://export.highcharts.com/',
+            //     form:    jsonObj
+            // }, function(error, response, body){
+            //     console.log(body);
+            // });
+        });
+    }else if(req.method=='GET') {
+        //http://localhost:3000/autocomplete?symbol=AAPL
+        //http://liuyinstock.us-east-2.elasticbeanstalk.com/autocomplete?symbol=AAPL
+        var q = url.parse(req.url, true).query;
+        var pathName = url.parse(req.url, true).pathname;
+        var symbol = q.symbol;
+        console.log(pathName + ", " + symbol);
+    
+        if(pathName === "/autocomplete"){
+            //http://localhost:3000/autocomplete?symbol=AAPL
+            queryFullSymbolName(symbol, res);
+        }else if(pathName === "/price"){
+            //http://localhost:3000/price?symbol=AAPL
+            queryStockPrice(symbol, res);
+            // locallyQueryStockPrice(symbol, res); //local test
+        }else if(pathName === "/indicator"){
+            //http://localhost:3000/indicator?symbol=AAPL&indicator=SMA
+            var indicator = q.indicator;
+            // console.log("query: " + queryType + " symbol: " + symbol + " indicator: " + indicator);
+            querySingleIndicator(symbol, indicator, res);
+            // locallyQuerySingleIndicator(symbol, indicator, res); //local test
+        }else if(pathName === "/news"){
+            //http://localhost:3000/news?symbol=AAPL
+            queryNews(symbol, res);
+        }else{
+            res.writeHead(404, {"Content-Type": "text/plain"});
+            res.end("Invalid Format");
+        }
     }
 });
 var port = process.env.PORT || 3000;
