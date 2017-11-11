@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef} from '@angular/core';
 import { AppService } from './app.service';
 import { ChartsService } from './charts.service';
 import { Observable, Subscription } from 'rxjs/Rx';
@@ -114,6 +114,7 @@ export class AppComponent {
 
   constructor(private service: AppService, private chartService: ChartsService, private fb: FacebookService,
         private http: HttpClient, private ref: ChangeDetectorRef){ 
+
     this.symbol.valueChanges
     .debounceTime(50)
     .subscribe(data => {
@@ -145,11 +146,13 @@ export class AppComponent {
 
 
   ngOnInit(){ 
+    this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
+
     ////test favoriteList, time use timestamp
-    this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
-        new Stock('MSFT', 73.28, 0.03, -0.62, '11,896,592', 1510204245065),
-        new Stock('YHOO', 53.28, 0.15, 0.62, '11,896,592', 1510204145065)];
-    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+    // this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
+    //     new Stock('MSFT', 73.28, 0.03, -0.62, '11,896,592', 1510204245065),
+    //     new Stock('YHOO', 53.28, 0.15, 0.62, '11,896,592', 1510204145065)];
+    // localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
 
   /**
@@ -378,12 +381,9 @@ export class AppComponent {
       case 7:{ chartOptions = JSON.stringify(this.BBANDSChartOptions); break; }
       case 8:{ chartOptions = JSON.stringify(this.MACDChartOptions); break; }
     }
-    let imgURL = encodeURI('async=false&type=jpeg&width=600&options=' + chartOptions); //body
-    console.log(imgURL);
-    console.log(imgURL.length);
-    
-    // let exportImgURL = this.serverURL + "/postImg";
-    let exportImgURL = "http://localhost:3000/postImg";
+    let imgURL = encodeURI('async=false&type=jpeg&width=600&options=' + chartOptions); //body    
+    let exportImgURL = this.serverURL + "/postImg";
+    // let exportImgURL = "http://localhost:3000/postImg";
 
     //post to server
     this.http.post(exportImgURL, imgURL, {
@@ -507,7 +507,7 @@ export class AppComponent {
     
         this.lastPrice = parseFloat(prevObj['4. close']).toFixed(2);    
         this.changeNum = (this.curClose - this.lastPrice).toFixed(2);
-        this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2) + "%";
+        this.changePercent = ((this.changeNum / this.lastPrice) * 100).toFixed(2);
   
         this.loadingMap['Table'] = true;
 
