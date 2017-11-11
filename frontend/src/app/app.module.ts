@@ -19,7 +19,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { OrderModule } from 'ngx-order-pipe';
 import { FacebookModule } from 'ngx-facebook';
-import { BootstrapSwitchComponent } from 'angular2-bootstrap-switch';
+import { BootstrapSwitchModule } from 'angular2-bootstrap-switch';
 
 declare let require: any;
 export function highchartsFactory() {
@@ -31,7 +31,7 @@ export function highchartsFactory() {
 
 @NgModule({
   declarations: [
-    AppComponent, BootstrapSwitchComponent
+    AppComponent
   ],
   imports: [
     BrowserModule, NgbModule,
@@ -42,7 +42,8 @@ export function highchartsFactory() {
     HttpClientModule,
     MomentModule,
     BrowserAnimationsModule,
-    OrderModule
+    OrderModule,
+    BootstrapSwitchModule.forRoot(),
   ],
   providers: [{
     provide: HighchartsStatic,
