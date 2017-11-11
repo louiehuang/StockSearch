@@ -94,7 +94,7 @@
         padding: 10px 10px
     }
     .news_title_font{
-        font-size: 14px;
+        font-size: 18px;
     }
     .news_content_font{
         font-size: 13px;
@@ -138,13 +138,6 @@
     margin-top: 10px;
     text-align: center;
 }
-
-/* .mat_autocomplete_box{
-    padding-left: 10px;
-    background-color: white;
-    margin-left: auto;
-} */
-
 
 .result_tabs{
     margin-top: 15px;
@@ -207,8 +200,8 @@
 }
 @media all and (min-width: 321px) and (max-width: 767px){
     .result_tabs .table-stock th, td{
-        padding-left: 10px;
-        font-size: 14px;
+        padding-left: 5px;
+        font-size: 13px;
     }
 }
 

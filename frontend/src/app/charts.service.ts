@@ -1,14 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-import 'rxjs/add/operator/toPromise';
-// import * as moment from 'moment';
 import * as moment from 'moment-timezone';
 
 @Injectable()
 export class ChartsService {
-    constructor(private http : Http){
-        
-    }
+    constructor(private http : Http){}
 
     /**
      * parse prive & volume data
@@ -27,9 +23,7 @@ export class ChartsService {
             max_volume = Math.max(max_volume, volume);
             cnt++;
         }
-    
         max_volume *= 1.5;
-        
         //remember to reverse
         return {
             date: array_date.reverse(),
@@ -38,10 +32,6 @@ export class ChartsService {
             max_volume: max_volume
         };
     }
-
-
-
-
 
     /**
      * Parse indicator with only one target, such as "SMA"
@@ -111,13 +101,7 @@ export class ChartsService {
     }
   
 
-
     parseStockData(jsonObj){
-        // var ts = moment("2013-10-31", "YYYY-MM-DD").valueOf();
-        // var m = moment(ts);
-        // var s = m.format("MM/DD/YYYY");
-        // console.log("Values are: ts = " + ts + ", s = " + s);
-
         var cnt = 0, combinedData = [] //[[ms, price], [ms, price], [ms, price]... [ms, price]]
         var array_date = [], array_price = [];
         for(var key in jsonObj) {
@@ -136,7 +120,6 @@ export class ChartsService {
             tmp.push(array_date[i]); tmp.push(array_price[i]);
             ret.push(tmp);
         }
-
         return ret;
     }
 
@@ -150,7 +133,7 @@ export class ChartsService {
      * @param limit 
      */
     parseNew(data, timeZone, limit){
-        console.log("timeZone: " + timeZone);
+        // console.log("timeZone: " + timeZone);
         var ret = [];
         for(var i = 0; i < limit; i++){
             //process link
@@ -167,10 +150,8 @@ export class ChartsService {
                 link += "-" + title;
                 data[i]['link'] = link;
             }
-
             //process timezone
             data[i]['pubDate'] = this.convertDate(data[i]['pubDate'].toString(), timeZone);
-
             ret.push(data[i]);
         }
         return ret;

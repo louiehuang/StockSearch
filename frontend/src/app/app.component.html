@@ -45,7 +45,7 @@
         <div style="border: solid 1px #E3E3E3; margin-top: 15px; margin-left: 15px; margin-right:15px">
 
             <!-- Favorite List Div -->
-            <div *ngIf="inFavoriteList" [@toStockChart]="state">
+            <div *ngIf="isInFavoriteListPage" [@toStockChart]="state">
                 <div class="swich_bar">
                         <div class="col-fav-nav-mobile-1"
                             style="height: 100%; padding-top: 8px; font-weight: bold;">
@@ -58,7 +58,7 @@
                                 <li class="btn-group-li-mobile">
                                     <!-- <input id="refreshSwitch" type="checkbox" data-toggle="toggle"> -->
                                     <!-- angular2-bootstrap-switch -->
-                                    <switch [size]="switchSize"
+                                    <switch [status]="autoRefresh" [size]="switchSize"
                                         [onText]="onText" [offText]="offText" [onColor]="onColor" [offColor]="offColor"
                                         (statusChange)="onFlagChange($event)">
                                     </switch>
@@ -108,7 +108,7 @@
 
                     <table class = "table-stock" style="margin: 15px 0px;">
                         <tr>
-                            <th style="padding-left: 10px">Symbol</th>
+                            <th>Symbol</th>
                             <th>Stock Price</th>
                             <th>Change (Change Percent)</th>
                             <th>Volume</th>
@@ -132,7 +132,6 @@
                             </td>
                             <td>{{favStock.volume}}</td>
                             <td>
-                                <!-- <span class="glyphicon glyphicon-trash"></span> -->
                                 <button type="button" (click) = "removeSpecificStockFromFavoriteList(favStock.symbol)">
                                     <span class="glyphicon glyphicon-trash"></span>
                                 </button>
@@ -143,7 +142,7 @@
             </div>
 
             <!-- Chart Div -->
-            <div *ngIf="!inFavoriteList" [@toFavoriteList]="state">
+            <div *ngIf="!isInFavoriteListPage" [@toFavoriteList]="state">
 
                 <div class="swich_bar">
                     <div style="width: 15%; height: 100%; display: block; float: left; position: relative">
@@ -472,7 +471,7 @@
                         </div>
                         <div *ngIf="loadingMap['News'] && !errInloadingMap['News']">
                             <div *ngFor="let news of newsArray" class="new-content-wrap-mobile">
-                                <div class="news_title_font" style="color:#377BB5; font-size: 20px;">
+                                <div class="news_title_font" style="color:#377BB5;">
                                         <a target="_blank" href="{{news.link}}">{{news.title}}</a>
                                 </div>
                                 <div class="news_content_font news-content-margin">Author: {{news['sa:author_name']}} </div>

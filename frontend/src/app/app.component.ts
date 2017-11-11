@@ -10,10 +10,12 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
 import { FacebookService, InitParams, UIParams, UIResponse } from 'ngx-facebook';
 import { BootstrapSwitchComponent } from 'angular2-bootstrap-switch';
-// import 'bootstrap-toggle';
 
 declare let $: any;
 
+/**
+ * This class is used for building favorite list
+ */
 export class Stock {
   //addTime is the timestamp that a user add a stock to his favorite list
   constructor(public symbol: string, public price: number, public change: number, 
@@ -42,50 +44,48 @@ export class Stock {
   ]
 })
 export class AppComponent {
-  title = 'Stock Search';
+  serverURL: string = "http://liuyinstock.us-east-2.elasticbeanstalk.com";
 
-  //switch button
-  onText='ON';
-  offText='OFF';
-  onColor="blue";
-  offColor="gray";
-  switchSize="small";
+  //switch button params
+  onText='ON'; offText='OFF'; onColor="blue"; offColor="gray"; switchSize="small";
 
   //input is valid (not empty and not only space)
   isInvalidInput: boolean = false; //Input Border
   validQuote: boolean = false; //Get Quete Button
   //when chart has no data, cannot press btn-goStock
-  existStockInfo: boolean = false;
+  existStockInfo: boolean = false; //false diable btn-goStock ('>') button
 
-  state: string;
+  state: string; //animation state
   //current page is at favorite list
-  inFavoriteList: boolean = true;
+  isInFavoriteListPage: boolean = true;
   switchDivAnimate(){
     // if (this.state === 'favList') { this.state = 'in'; }
     this.state = 'in';
-    this.inFavoriteList = !this.inFavoriteList;
-
+    this.isInFavoriteListPage = !this.isInFavoriteListPage;
     //change sorting rule to default
     this.orderKey = 'default';
     this.orderRule = false; //reverse 'false' => ascending order, true for descending
   }
 
+  //favorite list and sorting
   currentStockInFavoriteList: boolean = false;
+  favoriteList: Stock[]; //fetch from local storage
+  orderKey = 'default';
+  orderRule = false; //reverse 'false' => ascending order, true for descending
+
+  //auto refresh
+  autoRefresh: boolean = false;
+  timer; //refresh timer
+  subscript: Subscription;
 
   //record whether data is still been querying, used for process bar
-  //false means data has not been received yet, still processing
+  //false means data has not been received yet, still being querting (processing)
   loadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,
-  'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 
-  'Table': false, 'HighStock': false, 'News': false};
+  'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 'Table': false, 'HighStock': false, 'News': false};
 
   //record whetehr error occurs in data querying, used for alert (error handling)
   errInloadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,
   'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 'News': false};
-
-  favoriteList: Stock[]; //fetch from local storage
-
-  orderKey = 'default';
-  orderRule = false; //reverse 'false' => ascending order, true for descending
 
   symbol : FormControl = new FormControl();
   searchSymbolName = ""; //this value will change when typing search input
@@ -110,41 +110,33 @@ export class AppComponent {
   stockChartOptions: Object;
 
   //news
-  newsArray = [];
-
-  //auto refresh
-  autoRefresh: boolean = false;
-  timer; //refresh timer
-  subscript: Subscription;
-  
+  newsArray = [];  
 
   constructor(private service: AppService, private chartService: ChartsService, private fb: FacebookService,
         private http: HttpClient, private ref: ChangeDetectorRef){ 
     this.symbol.valueChanges
     .debounceTime(50)
     .subscribe(data => {
-      this.searchSymbolName = data;
-      if(this.inputValidationCheck(data)){
-        //valid
+      this.searchSymbolName = data; //input value
+      if(this.inputValidationCheck(data)){ //input is valid
         document.getElementById("input_symbol").className = "";
         this.isInvalidInput = false;
         this.validQuote = true;
-        this.ref.detectChanges();
+        this.ref.detectChanges(); //update UI manually
         this.service.searchSymbol(data).subscribe(response =>{
-            console.log(this.searchSymbolName);
             this.searchResult = response;
-            console.log(response);
         })
-      }else{
-        this.isInvalidInput = true;
-        this.validQuote = false;
+      }else{ //invalid input value
+        this.isInvalidInput = true; //input box's border turns red and show error message
+        this.validQuote = false; //disable 'Get Quote' button
         document.getElementById("input_symbol").className = "input_error";
-        this.searchResult = [];
+        this.searchResult = []; //set to empty
       }
     });
 
+    //face book API
     let initParams: InitParams = {
-      appId: '918643571616008',
+      appId: '918643571616008', //my api id
       xfbml: true,
       version: 'v2.11'
     };
@@ -153,20 +145,19 @@ export class AppComponent {
 
 
   ngOnInit(){ 
-    //drawLineCharts and draw stock chart in onSubmit()
-
-    // this.onSubmit('AAPL'); //test
-
-    ////time use timestamp
+    ////test favoriteList, time use timestamp
     this.favoriteList = [new Stock('AAPL', 153.28, -0.95, -0.62, '21,896,592', 1510204242065),
         new Stock('MSFT', 73.28, 0.03, -0.62, '11,896,592', 1510204245065),
         new Stock('YHOO', 53.28, 0.15, 0.62, '11,896,592', 1510204145065)];
-
     localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
   }
 
+  /**
+   * switch button change (turn on or off automatic refresh)
+   * @param event 
+   */
   onFlagChange(event){
-    console.log(event);
+    console.log(event); //true or false
     this.autoRefresh = (this.autoRefresh === true ? false : true);
     if(this.autoRefresh){
       console.log('start auto refreshing');
@@ -181,51 +172,39 @@ export class AppComponent {
   }
 
   /**
-   * if need to get element id, put code here
+   * clear input and change to first page (Favorite List Page)
    */
-  ngAfterViewInit(){
-    // $('#refreshSwitch').bootstrapToggle();
-    // $('#refreshSwitch').change((event) => {
-    //   // this.toggleValueChange(event.target.checked);
-    //   this.autoRefresh = (this.autoRefresh === true ? false : true);
-    //   if(this.autoRefresh){
-    //     console.log('start auto refreshing');
-    //     this.timer = Observable.timer(0, 5000); //delay, period
-    //     this.subscript = this.timer.subscribe(data=> {
-    //       this.updateFavoriteList();
-    //     });
-    //   }else{
-    //     console.log('stop auto refreshing');
-    //     this.subscript.unsubscribe();
-    //   }
-    // });
-  }
-
   clear(){
-    this.inFavoriteList = true;
+    this.isInFavoriteListPage = true; //change to first page (Favorite List Page)
     this.existStockInfo = false;
     this.validQuote = false;
   }
 
+  /**
+   * symbol input box on blur, if valid ,change box border to res and show error message
+   */
   onInputBlur(){
-    console.log(this.searchSymbolName);
+    // console.log(this.searchSymbolName);
     let valid = this.inputValidationCheck(this.searchSymbolName);
     if(!valid){
       document.getElementById("input_symbol").className = "input_error";
     }else{
       document.getElementById("input_symbol").className = "";
     }
-    console.log("valid: " + valid);
+    console.log("input valid: " + valid);
   }
 
+  /**
+   * auto refresh calls this function, iterate all favorite symbol and query new data
+   */
   updateFavoriteList(){
+    console.log("refresh function begins");
     if(this.favoriteList === null || this.favoriteList === undefined || this.favoriteList.length === 0){
-      console.log('favoriteList is empty');
+      console.log('favoriteList is empty, do not refresh');
       return;
     }
-
     for (let i in this.favoriteList) {
-      const queryURL = 'http://liuyinstock.us-east-2.elasticbeanstalk.com/price?symbol=' + this.favoriteList[i].symbol;
+      const queryURL = this.serverURL + '/price?symbol=' + this.favoriteList[i].symbol;
       this.updateStockData(i, queryURL); //detectChanges() in updateStockData()
     }
   }
@@ -234,33 +213,43 @@ export class AppComponent {
    * request favorite stock data and update favoriteList
    */
   updateStockData(index, queryURL){
-    console.log('before refresh ' + this.favoriteList[index].symbol + ", " + this.favoriteList[index].price);
+    // console.log('before refresh ' + this.favoriteList[index].symbol + ", price: " + this.favoriteList[index].price);
     this.http.get(queryURL).subscribe(data => {
         try {
           let meta_data = data['Meta Data']; 
           let json_series_data = data['Time Series (Daily)']; 
-          let symbol = meta_data['2. Symbol'];
-          let newOpen, newClose, newVolume;
-  
-          for (let key in json_series_data) {
-              //just get one data, then break
+          let symbol = this.favoriteList[index].symbol;
+
+          let prevPrice = this.favoriteList[index].price;
+          let newOpen, newVolume;
+          for (let key in json_series_data) { //just get one data, then break
               newOpen = json_series_data[key]['1. open'];
-              newClose = json_series_data[key]['4. close'];
               newVolume = json_series_data[key]['5. volume'];
               break;
           }
-          let prevPrice = this.favoriteList[index].price;
-          let temChange = (parseFloat(newOpen) - prevPrice);
-          this.favoriteList[index].change = parseFloat(temChange.toFixed(2));
-          if(prevPrice === 0)
-            this.favoriteList[index].changePercent = 0.00; //avoid divided by 0
+
+          //5 seconds is too fast for api querying, may crush, leads to undefined
+          if(newOpen === undefined){
+            this.favoriteList[index].change = 0;
+            this.favoriteList[index].changePercent = 0.00;
+          }else{
+            let temChange = (parseFloat(newOpen) - prevPrice);
+            this.favoriteList[index].change = parseFloat(temChange.toFixed(2));
+            if(prevPrice === 0)
+              this.favoriteList[index].changePercent = 0; //avoid divided by 0
+            else
+              this.favoriteList[index].changePercent = parseFloat((temChange / prevPrice * 100).toFixed(2));
+            this.favoriteList[index].price = parseFloat(newOpen);
+          }
+
+          if(newVolume === undefined)
+            this.favoriteList[index].volume = 'waiting';
           else
-            this.favoriteList[index].changePercent = parseFloat((temChange / prevPrice * 100).toFixed(2));
-          this.favoriteList[index].price = parseFloat(newOpen);
-          this.favoriteList[index].volume = newVolume.replace(/(?=(?:\d{3})+\b)/g, ',');
-          
-          //update
-          localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+            this.favoriteList[index].volume = newVolume.replace(/(?=(?:\d{3})+\b)/g, ',');
+
+          //subscribe is async funtion, have to save changes and update list here
+          //if in for loop, then not updated, since for loop runs over before data is fetched
+          localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList)); //save changes
           //to update UI, if no detectChanges, UI won't change even if date updated
           this.ref.detectChanges(); 
         } catch (error) {
@@ -279,7 +268,6 @@ export class AppComponent {
    */
   onSortingKeyChange(value){
     this.orderKey = value;
-    // console.log(this.orderKey);
   }
 
   /**
@@ -292,23 +280,17 @@ export class AppComponent {
     }else if(value === "descending"){
       this.orderRule = true;
     }
-    // console.log(this.orderRule);
   }
-
-
 
   /**
    * add (or remove) stock to favorite list
    */
   addToFavorite(){
     let favoriteCheckRes = this.isStockInFavoriteList(this.symbolName);
-
-    if(favoriteCheckRes.found){
-      //if in favorite List, remove it change ang img to empty-star
+    if(favoriteCheckRes.found){ //if in favorite List, remove it change ang img to empty-star
       // document.getElementById("btn_fav").className = "glyphicon glyphicon-star-empty";
       this.removeCurrentStockFromFavoriteList(favoriteCheckRes.index);
-    }else{
-      //else add to favorite List, and change img to star
+    }else{  //else add to favorite List, and change img to star
       // document.getElementById("btn_fav").className = "glyphicon glyphicon-star";
       this.addCurrentStockToFavoriteList();
     }
@@ -317,31 +299,7 @@ export class AppComponent {
   }
 
   /**
-   * check whether current searching stock is in user's favorite list
-   * if so, return true and its index; otherwise, return false and -1
-   */
-  isStockInFavoriteList(symbol){
-    this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
-    console.log('isStockInFavoriteList'); 
-    console.log(this.favoriteList);
-    
-    let found = false, index = -1;
-    if(this.favoriteList === null || this.favoriteList === undefined){
-      return {found, index};
-    }
-
-    for(let i = 0; i < this.favoriteList.length; i++) {
-        if (this.favoriteList[i].symbol == symbol) {
-            found = true;
-            index = i;
-            break;
-        }
-    }
-    return {found, index};
-  }
-
-  /**
-   * remove stock at index
+   * remove stock at specified index, 'star' button calls addToFavorite(), may call this function
    * @param index 
    */
   removeCurrentStockFromFavoriteList(index){
@@ -350,18 +308,36 @@ export class AppComponent {
   }
 
   /**
-   * client trash button call this function to delete stock from favorite list
+   * check whether current searching stock is in user's favorite list
+   * if so, return true and its index; otherwise, return false and -1
+   */
+  isStockInFavoriteList(symbol){
+    this.favoriteList = JSON.parse(localStorage.getItem('favoriteList'));
+    let found = false, index = -1;
+    if(this.favoriteList === null || this.favoriteList === undefined || this.favoriteList.length === 0){
+      return {found, index}; //false, -1
+    }
+    for(let i = 0; i < this.favoriteList.length; i++) {
+        if (this.favoriteList[i].symbol == symbol) {
+            found = true; index = i;
+            break;
+        }
+    }
+    return {found, index};
+  }
+
+  /**
+   * client trash button calls this function to delete stock from favorite list
    * @param symbol 
    */
   removeSpecificStockFromFavoriteList(symbol){
     console.log("delete: " + symbol);
-
     //When delete button clicked, remove stock from the table and favorites list local storage
     let res = this.isStockInFavoriteList(symbol);
     this.favoriteList.splice(res.index, 1);
-    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList));
+    localStorage.setItem('favoriteList', JSON.stringify(this.favoriteList)); //save changes
 
-    //When delete button clicked, the removed stock should not be displayed with yellow star button in other pages
+    //When delete button clicked, the removed stock should not be displayed with yellow star in other pages
     if(symbol == this.symbolName)
       this.currentStockInFavoriteList = false;
   }
@@ -372,13 +348,11 @@ export class AppComponent {
    */
   addCurrentStockToFavoriteList(){
     let addTime = Date.now();
-    console.log(addTime);
     this.favoriteList.push(
       new Stock(this.symbolName, this.lastPrice, this.changeNum, 
         this.changePercent, this.curVolume, addTime));
     console.log(this.favoriteList);
   }
-
 
   /**
    * change chart Id when clicking different chart (price and indicators chart)
@@ -432,15 +406,14 @@ export class AppComponent {
   }
 
 
-  
 
   /**
    * Draw all indicator charts
    * @param symbol 
    */
   drawLineCharts(symbol){
-    console.log("draw line: " + symbol);
-    
+    // console.log("draw line: " + symbol);
+
     /***** Single Line *****/
     this.drawSingleLineChart(this.indexMap, symbol, 'SMA');
     this.drawSingleLineChart(this.indexMap, symbol, 'EMA');
@@ -469,7 +442,7 @@ export class AppComponent {
     else
       this.isInvalidInput = true; //empty
     this.ref.detectChanges();
-    console.log(isValid);
+    console.log("is input valid: " + isValid);
     return isValid;
   }
 
@@ -494,12 +467,12 @@ export class AppComponent {
     if(this.inputValidationCheck(value) == false)
       return;
 
-    if(this.inFavoriteList)
+    if(this.isInFavoriteListPage)
       this.switchDivAnimate();
-    this.inFavoriteList = false;
+    this.isInFavoriteListPage = false;
 
     // let data = await this.service.queryPrice(value);
-    let baseURL = 'http://liuyinstock.us-east-2.elasticbeanstalk.com/price?symbol=';
+    let baseURL = this.serverURL + '/price?symbol=';
     console.log("onSubmit: " + baseURL + value);
 
     this.http.get(baseURL + value).subscribe(data => {
@@ -569,19 +542,14 @@ export class AppComponent {
           },
           series: [
             {
-              type: 'area',
-              name: 'Pirce',
+              type: 'area', name: 'Pirce', yAxis:0,
               data: parseRes.price, //data
-              yAxis:0,
               tooltip:{ pointFormat: value + ': {point.y:,..2f}' },
-              marker:{ enabled:false },
+              marker:{ enabled:false }
             },
             {
-              type: 'column',
-              name: 'Volume',
-              data: parseRes.volume,
-              yAxis:1,
-              color: 'red'
+              type: 'column', name: 'Volume', yAxis:1, color: 'red',
+              data: parseRes.volume
             }
           ]
         };
@@ -604,14 +572,13 @@ export class AppComponent {
   }
 
   createNewArray(symbol, timeZone){
-    let baseURL = 'http://liuyinstock.us-east-2.elasticbeanstalk.com/news?symbol=';
+    let baseURL = this.serverURL + '/news?symbol=';
     console.log("createNewArray: " + baseURL + symbol);
-
     this.http.get(baseURL + symbol).subscribe(data => {
       //parse, get 5 news and convert news link if needed
       let limit = 5;
       this.newsArray = this.chartService.parseNew(data, timeZone, limit); //jsonObj
-      console.log(this.newsArray);
+      // console.log(this.newsArray);
       this.loadingMap['News'] = true;
     },
     err => {
@@ -627,8 +594,7 @@ export class AppComponent {
    */
   createStockChart(data){
     //[[1383202800000, 35.405], [1383289200000, 35.525], ... [1508396400000, 77.91]]
-    //1000 elements
-    let parseRes = this.chartService.parseStockData(data);
+    let parseRes = this.chartService.parseStockData(data); //1000 elements
     this.stockChartOptions = {
       chart: { height: 400, width: null },
       title: { text: this.symbolName + ' Stock Value' },
@@ -665,10 +631,10 @@ export class AppComponent {
    * @param indicator 
    */
   drawSingleLineChart(indexMap, symbol, indicator){
-    let baseURL = "http://liuyinstock.us-east-2.elasticbeanstalk.com/indicator?symbol=" + symbol;
+    let baseURL = this.serverURL + "/indicator?symbol=" + symbol;
     console.log("drawSingleLineChart: " + baseURL + '&indicator=' + indicator);
     this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
-      console.log(data);
+      // console.log(data);
       let indicator_data = data['Technical Analysis: ' + indicator]; //full size data
       
       if(indicator_data === undefined){
@@ -739,20 +705,18 @@ export class AppComponent {
    * @param target3 
    */
   drawMultipleLineChart(indexMap, symbol, indicator, target1, target2, target3){
-    let baseURL = "http://liuyinstock.us-east-2.elasticbeanstalk.com/indicator?symbol=" + symbol;
+    let baseURL = this.serverURL + "/indicator?symbol=" + symbol;
     let isTwoLine = false;
     if(target3.length == 0)
       isTwoLine = true;
 
     this.http.get(baseURL + '&indicator=' + indicator).subscribe(data => {
-      console.log(data);
+      // console.log(data);
       let indicator_data = data['Technical Analysis: ' + indicator]; //full size data
-      
       if(indicator_data === undefined){
         this.errInloadingMap[indicator] = true;
         return;
       }
-
       let parseRes;
       if(isTwoLine == true)
         parseRes = this.chartService.parseTwoTarget(indicator_data, target1, target2); //SlowD, SlowK
