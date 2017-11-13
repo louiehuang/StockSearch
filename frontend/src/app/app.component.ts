@@ -489,6 +489,13 @@ export class AppComponent {
     this.http.get(baseURL + value).subscribe(data => {
       try {  
         let meta_data = data['Meta Data']; 
+
+        // // use try catch
+        // if(meta_data === undefined){
+        //   this.errInloadingMap['Price'] = true;
+        //   return;
+        // }
+
         let json_series_data = data['Time Series (Daily)']; 
         let parseRes = this.chartService.parsePriceData(json_series_data);
     
@@ -567,12 +574,13 @@ export class AppComponent {
         this.createStockChart(json_series_data);
         this.loadingMap['Price'] = true; //data loaded
       } catch (error) {
-        this.errInloadingMap['Pirce'] = true;
-        console.log(error);
+        this.errInloadingMap['Price'] = true;
+        this.errInloadingMap['HighStock'] = true;
       }
     },
     err => {
       this.errInloadingMap['Price'] = true;
+      this.errInloadingMap['HighStock'] = true;
       console.log(err);
     });
 
@@ -702,6 +710,7 @@ export class AppComponent {
     },
     err => {
       this.errInloadingMap[indicator] = true;
+      console.log("err ind: " + this.loadingMap[indicator] + ", " + this.errInloadingMap[indicator]);
       console.log(err);
     });
   }
