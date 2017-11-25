@@ -3,7 +3,9 @@ package edu.usc.liuyinhu.stocksearch;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -64,6 +66,11 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
                 }
             }
         });
+
+
+        LocalBroadcastManager.getInstance(getApplicationContext())
+                .registerReceiver(mBroadcastReceiver,
+                        new IntentFilter(MyService.MY_SERVICE_MESSAGE));
     }
 
 
@@ -96,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
             @Override
             public void onClick(View v) {
 //                startService(new Intent(MainActivity.this, MyService.class));
-                requestData("AA");
+                requestData();
             }
         });
     }
@@ -149,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
                     "Received " + stockNameItems.length + " items from service",
                     Toast.LENGTH_SHORT).show();
 
-            Log.i("MainActivity", stockNameItems.toString());
+            Log.i("MainActivity", stockNameItems[0].toString());
 
 //            stockNameList = Arrays.asList(stockNameItems);
 //            displayData();
