@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import edu.usc.liuyinhu.R;
 
 public class StockDetailsActivity extends AppCompatActivity {
 
