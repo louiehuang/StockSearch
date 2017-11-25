@@ -111,45 +111,4 @@ public class AutoCompleteTask extends AsyncTask<String, Void, ArrayList<String>>
         return ret;
     }
 
-
-
-//    private String fetchData(String queryUrl){
-//        Log.d("AutoCompleteTask", queryUrl);
-//        final List<String> list = new LinkedList<>();
-//        final String[] data = new String[1];
-//
-//        final JsonArrayRequest jsonArrayRequest = new JsonArrayRequest
-//                (Request.Method.GET, queryUrl, null, new Response.Listener<JSONArray>() {
-//                    @Override
-//                    public void onResponse(JSONArray response) {
-//                        Log.d("AutoCompleteTask", response.toString());
-//                        try{
-//
-//                            for(int i = 0; i < response.length(); i++){
-//                                JSONObject jsonObj = response.getJSONObject(i);
-//
-//                                StringBuffer sb = new StringBuffer();
-//                                sb.append(jsonObj.getString("Symbol")); sb.append(" - ");
-//                                sb.append(jsonObj.getString("Name")); sb.append(" (");
-//                                sb.append(jsonObj.getString("Exchange")); sb.append(")");
-//                                list.add(sb.toString());
-//                                Log.d("AutoCompleteTask", sb.toString());
-//                            }
-//
-//                        } catch (JSONException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }, new Response.ErrorListener() {
-//                    @Override
-//                    public void onErrorResponse(VolleyError error) {
-//                        Log.d("AutoCompleteTask", error.toString());
-//                    }
-//                });
-//        requestQueue.add(jsonArrayRequest);
-//
-//        return data[0];
-//    }
-
-
 }

@@ -15,6 +15,8 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import edu.usc.liuyinhu.R;
 import edu.usc.liuyinhu.interfaces.IAsyncResponse;
@@ -29,6 +31,9 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements IAsyncResponse {
 //    private static String[] stocks = new String[] {"AAP", "AAPL", "AL"};
     AutoCompleteTextView ac_stock_input;
+
+    List<StockName> stockNameList;
+    ArrayAdapter<StockName> acAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,9 +55,12 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if(s.toString().trim().length() >= 1) {
-                    AutoCompleteTask acTask = new AutoCompleteTask();
-                    acTask.delegate = MainActivity.this;
-                    acTask.execute(s.toString());
+//                    AutoCompleteTask acTask = new AutoCompleteTask();
+//                    acTask.delegate = MainActivity.this;
+//                    acTask.execute(s.toString());
+
+                    requestData(s.toString().trim());
+
                 }
             }
         });
@@ -106,14 +114,23 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
                 Toast.makeText(MainActivity.this,
                         "Received " + stockNameItems.length + " items from service",
                         Toast.LENGTH_SHORT).show();
-//                mItemList = Arrays.asList(dataItems);
-//                displayData();
+                stockNameList = Arrays.asList(stockNameItems);
+                displayData();
                 Log.i("MainActivity", stockNameItems[0].toString());
             }
             @Override
             public void onFailure(Call<StockName[]> call, Throwable t) {
             }
         });
+    }
+
+    private void displayData() {
+        if (stockNameList != null) {
+            acAdapter = new ArrayAdapter<>(
+                    MainActivity.this, android.R.layout.simple_dropdown_item_1line, stockNameList);
+            ac_stock_input.setAdapter(acAdapter);
+            ac_stock_input.showDropDown(); //refresh
+        }
     }
 
 
@@ -134,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
 
             Log.i("MainActivity", stockNameItems.toString());
 
-//            mItemList = Arrays.asList(dataItems);
+//            stockNameList = Arrays.asList(stockNameItems);
 //            displayData();
         }
     };
