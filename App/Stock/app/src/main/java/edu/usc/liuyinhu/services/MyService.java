@@ -22,7 +22,7 @@ public class MyService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        MyWebService webService = MyWebService.retrofit.create(MyWebService.class);
+        AutoCompleteService webService = AutoCompleteService.retrofit.create(AutoCompleteService.class);
         Call<StockName[]> call = webService.stockNameItems("AA");
         StockName[] stockNameItems;
 

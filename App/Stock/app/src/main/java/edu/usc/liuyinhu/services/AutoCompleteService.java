@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-public interface MyWebService {
+public interface AutoCompleteService {
 
 //    //    String BASE_URL = "http://10.0.2.2:3000/";
 ////    String FEED = "autocomplete";

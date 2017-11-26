@@ -1,9 +1,9 @@
 <resources>
     <string name="app_name">StockSearch</string>
     <string name="title_activity_stock_details">StockDetailsActivity</string>
-    <string name="tab_text_1">Tab 1</string>
-    <string name="tab_text_2">Tab 2</string>
-    <string name="tab_text_3">Tab 3</string>
+    <string name="tab_text_1">CURRENT</string>
+    <string name="tab_text_2">HISTORICAL</string>
+    <string name="tab_text_3">NEWS</string>
     <string name="action_settings">Settings</string>
     <string name="section_format">Hello World from section: %1$d</string>
 </resources>

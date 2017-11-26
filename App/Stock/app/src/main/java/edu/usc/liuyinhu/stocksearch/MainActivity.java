@@ -24,14 +24,17 @@ import edu.usc.liuyinhu.R;
 import edu.usc.liuyinhu.interfaces.IAsyncResponse;
 import edu.usc.liuyinhu.models.StockName;
 import edu.usc.liuyinhu.services.MyService;
-import edu.usc.liuyinhu.services.MyWebService;
+import edu.usc.liuyinhu.services.AutoCompleteService;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static java.lang.Thread.sleep;
+
 
 public class MainActivity extends AppCompatActivity implements IAsyncResponse {
-//    private static String[] stocks = new String[] {"AAP", "AAPL", "AL"};
+    private static final String TAG = "MainActivity";
+    //    private static String[] stocks = new String[] {"AAP", "AAPL", "AL"};
     AutoCompleteTextView ac_stock_input;
 
     List<StockName> stockNameList;
@@ -62,16 +65,15 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
 //                    acTask.execute(s.toString());
 
                     requestData(s.toString().trim());
-
                 }
             }
         });
-
 
         LocalBroadcastManager.getInstance(getApplicationContext())
                 .registerReceiver(mBroadcastReceiver,
                         new IntentFilter(MyService.MY_SERVICE_MESSAGE));
     }
+
 
 
 
@@ -88,6 +90,26 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
 
 
     private void configureSwitchButton() {
+
+        //query btn
+        Button btn_getQuote = findViewById(R.id.btn_getQuote);
+        btn_getQuote.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+
+                //https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=AAPL&outputsize=full&apikey=KAGMK7YPZKV0EYYA
+
+                //get data
+
+                //pass data to StockDetailsActivity
+
+                Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
+                intent.putExtra("symbol", "AAPL");
+                startActivity(intent);
+            }
+        });
+
+
         Button switchBtn = findViewById(R.id.switch_btn);
         switchBtn.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -95,7 +117,6 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
                 startActivity(new Intent(MainActivity.this, StockDetailsActivity.class));
             }
         });
-
 
         //test
         Button testBtn = findViewById(R.id.test_btn);
@@ -110,9 +131,17 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
 
 
     private void requestData(String symbol) {
-        Log.i("MainActivity", "request");
-        MyWebService webService =
-                MyWebService.retrofit.create(MyWebService.class);
+        Log.i(TAG, "request");
+
+        //type too fast will cause app crush, how to deal with it???
+        try {
+            sleep(300);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        AutoCompleteService webService =
+                AutoCompleteService.retrofit.create(AutoCompleteService.class);
         Call<StockName[]> call = webService.stockNameItems(symbol);
         call.enqueue(new Callback<StockName[]>() {
             @Override
@@ -142,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
 
 
     private void requestData() {
-        Log.i("MainActivity", "request");
+        Log.i(TAG, "request");
         Intent intent = new Intent(MainActivity.this, MyService.class);
         startService(intent);
     }
@@ -156,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements IAsyncResponse {
                     "Received " + stockNameItems.length + " items from service",
                     Toast.LENGTH_SHORT).show();
 
-            Log.i("MainActivity", stockNameItems[0].toString());
+            Log.i(TAG, stockNameItems[0].toString());
 
 //            stockNameList = Arrays.asList(stockNameItems);
 //            displayData();
