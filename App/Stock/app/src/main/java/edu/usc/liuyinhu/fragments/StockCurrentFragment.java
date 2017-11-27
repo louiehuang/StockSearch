@@ -43,7 +43,6 @@ public class StockCurrentFragment extends Fragment {
      * The fragment argument representing the section number for this
      * fragment.
      */
-    private static final String ARG_SECTION_NUMBER = "section_number";
     private static final String ARG_STOCK_SYMBOL = "symbol";
 
     private String symbol;
@@ -53,20 +52,18 @@ public class StockCurrentFragment extends Fragment {
     TextView textView;
     Spinner spinner_indicators;
     Button btn_change;
-    WebView wv_price;
+    WebView wv_indicator;
 
 
-    public StockCurrentFragment() {
-    }
+    public StockCurrentFragment() { }
 
     /**
      * Returns a new instance of this fragment for the given section
      * number.
      */
-    public static StockCurrentFragment newInstance(int sectionNumber, String symbol) {
+    public static StockCurrentFragment newInstance(String symbol) {
         StockCurrentFragment fragment = new StockCurrentFragment();
         Bundle args = new Bundle();
-        args.putInt(ARG_SECTION_NUMBER, sectionNumber);
         args.putString(ARG_STOCK_SYMBOL, symbol);
         fragment.setArguments(args);
         return fragment;
@@ -119,10 +116,10 @@ public class StockCurrentFragment extends Fragment {
             public void onClick(View v) {
                 Log.i(TAG, "selected: " + selectedIndicator);
                 //have to use another thread to call js function
-                wv_price.post(new Runnable() {
+                wv_indicator.post(new Runnable() {
                     @Override
                     public void run() {
-                        wv_price.loadUrl("javascript:interfaceCreateChart('" + selectedIndicator +"')");
+                        wv_indicator.loadUrl("javascript:interfaceCreateChart('" + selectedIndicator +"')");
                     }
                 });
             }
@@ -135,15 +132,15 @@ public class StockCurrentFragment extends Fragment {
         //https://stackoverflow.com/questions/23556794/pass-variables-from-android-activity-to-javascript
 
         //create webView
-        wv_price = rootView.findViewById(R.id.wv_price);
-        wv_price.getSettings().setJavaScriptEnabled(true);
-        wv_price.loadUrl("file:///android_asset/charts.html"); //create html
+        wv_indicator = rootView.findViewById(R.id.wv_indicator);
+        wv_indicator.getSettings().setJavaScriptEnabled(true);
+        wv_indicator.loadUrl("file:///android_asset/currentChart.html"); //create html
 
         //notice that loadUrl is async!!! so to call function, make sure all functions have been loaded
-        wv_price.setWebViewClient(new WebViewClient() {
+        wv_indicator.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                wv_price.loadUrl("javascript:interfaceInitiate('" + symbol + "')");
+                wv_indicator.loadUrl("javascript:interfaceInitiate('" + symbol + "')");
             }
         });
 
@@ -186,10 +183,6 @@ public class StockCurrentFragment extends Fragment {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
             }
         });
-
-
-
     }
-
 
 }

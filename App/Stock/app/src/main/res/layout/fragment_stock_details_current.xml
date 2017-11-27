@@ -158,12 +158,11 @@
                     android:text="Indicators"
                     android:textStyle="bold" />
 
-
                 <Spinner
                     android:id="@+id/spinner_indicators"
-                    android:layout_weight="0.30"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="0.30"
                     android:spinnerMode="dropdown" />
 
                 <Button
@@ -171,7 +170,6 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.35"
-                    android:background="#ffffff"
                     android:text="Change" />
 
 
@@ -180,7 +178,7 @@
         </TableLayout>
 
         <WebView
-            android:id="@+id/wv_price"
+            android:id="@+id/wv_indicator"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"

@@ -5,6 +5,7 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.util.Log;
 import edu.usc.liuyinhu.fragments.PlaceholderFragment;
 import edu.usc.liuyinhu.fragments.StockCurrentFragment;
+import edu.usc.liuyinhu.fragments.StockHistoricalFragment;
 
 /**
  * Created by hlyin on 26/11/2017.
@@ -24,11 +25,14 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         // getItem is called to instantiate the fragment for the given page.
         // Return a PlaceholderFragment (defined as a static inner class below).
 
-        if(position == 0){
+        if(position == 0){ //current
             Log.i("Adapter", "symbol: " + symbol);
-            return StockCurrentFragment.newInstance(-10, symbol);
+            return StockCurrentFragment.newInstance(symbol);
+        }else if(position == 1){ //historical
+            return StockHistoricalFragment.newInstance(symbol);
+        }else{
+            return PlaceholderFragment.newInstance(position + 1);
         }
-        return PlaceholderFragment.newInstance(position + 1);
     }
 
     @Override

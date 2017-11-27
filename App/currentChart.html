@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Liuyin Huang's Homework</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://code.highcharts.com/highcharts.js"></script>
+        <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    </head>
+
+    <body>
+        <button id = "btn_price">Get Data</button>
+        <button id = "btn_indicator">Get Indicator</button>
+        <button id = "btn_two_indicator">Get Two</button>
+        <button id = "btn_three_indicator">Get Three</button>
+        <div id="chart_container"></div>
+    </body>
+
+
+    <script>
+        var base_url = "http://localhost:3000/";
+        // var base_url = "http://10.0.2.2:3000/";
+
+        var finishedCharts = 0; //needs to be 9 (1 price + 8 indicators)
+        function getFinishedNum(){
+            return finishedCharts;
+        }
+
+        var priceJsonObj;
+
+        // var SMAJsonObj; var EMAJsonObj; var CCIJsonObj; var RSIJsonObj; var ADXJsonObj;
+        var indicators = ['SMA', 'EMA', 'CCI', 'RSI', 'ADX', 'STOCH', 'MACD', 'BBANDS']; //indicator name
+        var indicatorJsonObjMap = []; //restore json obj of each indicator
+
+        
+        interfaceInitiate("AAPL");
+        $("#btn_price").click(function(){
+            interfaceCreateChart('Price');
+            console.log(finishedCharts);
+        });
+        $("#btn_indicator").click(function(){
+            interfaceCreateChart('RSI');
+        });
+        $("#btn_two_indicator").click(function(){
+            interfaceCreateChart('STOCH');
+        });
+        $("#btn_three_indicator").click(function(){
+            interfaceCreateChart('MACD');
+        });
+
+
+        //for java class to call
+        function interfaceInitiate(symbol){
+            console.log(symbol);
+            fetchPrice(symbol); //fetch price data
+            for (var i in indicators) 
+              fetchIndicator(symbol, indicators[i]); 
+        }
+
+        function interfaceCreateChart(indicator){
+            if(indicator == "Price"){
+                createPriceChart(priceJsonObj);
+            }else if(indicator == "SMA" || indicator == "EMA" || indicator == "CCI"  || indicator == "RSI" || indicator == "ADX"){
+                createSingleLineChart(indicatorJsonObjMap[indicator], indicator); //1
+            }else if(indicator == "STOCH"){
+                createTwoLineChart(indicatorJsonObjMap[indicator], indicator); //2
+            }else{
+                createThreeLineChart(indicatorJsonObjMap[indicator], indicator); //3
+            }
+        }
+
+
+        function fetchPrice(symbol) {
+            $.ajax({
+                url: base_url + "price?symbol=" + symbol, 
+                success: function(result){
+                    priceJsonObj = result;
+                    finishedCharts++;
+                    console.log("fetchPrice returns");
+                },
+                async: true
+            });
+        }
+
+        function fetchIndicator(symbol, indicator){
+            $.ajax({
+                url: base_url + "indicator?symbol=" + symbol + "&indicator=" + indicator, 
+                success: function(result){
+                    indicatorJsonObjMap[indicator] = result;
+                    finishedCharts++;
+                    console.log(indicator + " returns");
+                },
+                async: true
+            });
+        }
+
+
+        //create charts
+        function createPriceChart(jsonObj){
+            var meta = jsonObj['Meta Data'];
+            var symbol = meta['2. Symbol']; //full name
+            var ori_data = jsonObj['Time Series (Daily)']; //full size data
+
+            //get first Key, which is current date
+            for (var currentDate in ori_data) 
+                break;
+            //get past 6 month data
+            var currentYear = currentDate.substring(0,4);
+            var currentMonth = currentDate.substring(5,7);
+            var currentDay = currentDate.substring(8);
+
+            var data_price = []; var data_volume = []; var data_date = [];
+            var max_volume = 0;
+
+            var cnt = 0;
+            for(var key in ori_data) {
+                if(cnt++ >= 126) break;
+                data_price.push(parseFloat(ori_data[key]['1. open']));
+                data_volume.push(parseFloat(ori_data[key]['5. volume']));
+                data_date.push(key.substring(5).replace(/-/g, "\/"));
+                max_volume = Math.max(max_volume, ori_data[key]['5. volume']);
+            }
+
+            max_volume = 1.5 * max_volume;
+
+            Highcharts.chart('chart_container', {
+                chart: { zoomType: 'x', width: null },
+                title: { text: symbol + ' Stock Price and Volume' },
+                subtitle: {
+                      useHTML:true,
+                      text:"<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+                    },
+                xAxis: {
+                    categories: data_date,
+                    tickPositioner: function() {
+                        let res = [];
+                        for(let i = 0; i < this.categories.length; i++)
+                            if(i % 10 == 0) 
+                                res.push(this.categories.length - 1 - i);
+                        return res;
+                    }
+                },
+                yAxis: [
+                    { title: { text: 'Stock Price' }, labels:{ format:'{value:,.2f}' } },
+                    { title:{ text:'Volume' }, opposite:true, max: max_volume }
+                ],
+                plotOptions: {
+                    area: {
+                        lineWidth: 2,
+                        states: { hover: { lineWidth: 2 } }
+                    }
+                },
+                series: [
+                    {
+                      type: 'area', name: 'Pirce', yAxis:0,
+                      data: data_price, //data
+                      tooltip:{ pointFormat: symbol + ': {point.y:,..2f}' },
+                      marker:{ enabled:false }
+                    },
+                    {
+                      type: 'column', name: 'Volume', yAxis:1, color: 'red',
+                      data: data_volume
+                    }
+                ]
+            });
+        }
+
+
+
+        function createSingleLineChart(jsonObj, indicator){
+            var meta = jsonObj['Meta Data'];
+            var symbol = meta['1: Symbol'];
+            var indicator_fullname = meta['2: Indicator']; //full name
+            var ori_data = jsonObj['Technical Analysis: ' + indicator]; //full size data
+
+            //get first Key, which is current date
+            for (var currentDate in ori_data) 
+                break;
+
+            var array_date = [];
+            var array_indicator = [];
+
+            var cnt = 0;
+            for(var key in ori_data) {
+                if(cnt++ >= 126) break;
+                array_date.push(key.substring(5).replace(/-/g, "\/"));
+                array_indicator.push(parseFloat(ori_data[key][indicator]));
+            }
+
+            //remember to reverse
+            array_date.reverse();
+            array_indicator.reverse();
+
+
+            Highcharts.chart('chart_container', {
+                chart: { zoomType: 'x' },
+                title: { text: indicator_fullname },
+                subtitle: {
+                    useHTML:true,
+                    text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+                },
+                xAxis: {
+                    categories: array_date,
+                    tickPositioner: function() {
+                        let res = [];
+                        for(let i = 0; i < this.categories.length; i++) {
+                            if(i % 10 == 0) 
+                                res.push(this.categories.length - 1 - i);
+                        }
+                        return res;
+                    }
+                },
+                yAxis: { title: { text: indicator } },
+                plotOptions: { states: { hover: { lineWidth: 1 } } },
+                series: [{
+                    name: symbol,
+                    color: '#E62516',
+                    lineWidth: 1,
+                    marker: {
+                        enabled: true,
+                        symbol:'square',
+                        radius: 2,
+                        fillColor: '#E62516'
+                    },
+                    data: array_indicator
+                }]
+            });
+        }
+
+
+        function createTwoLineChart(jsonObj, indicator){
+            var meta = jsonObj['Meta Data'];
+            var stock_symbol = meta['1: Symbol'];
+            var indicator_fullname = meta['2: Indicator']; //full name
+            var ori_data = jsonObj['Technical Analysis: ' + indicator]; //full size data
+
+            for (var currentDate in ori_data) 
+                break;
+
+            var array_date = []; //date, x axis
+            var array_indicator_1 = [], array_indicator_2 = []; //indicator data
+
+            //get sub keys names, 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'
+            for(var key in ori_data) { 
+                var targets = Object.keys(ori_data[key]); //sub keys
+                break; //just run once iter to get sub keys names
+            }
+
+            var cnt = 0;
+            for(var key in ori_data) { //date, 2017-10-18
+                if(cnt++ >= 126) break;
+                array_date.push(key.substring(5).replace(/-/g, "\/"));
+                array_indicator_1.push(parseFloat(ori_data[key][targets[0]]));
+                array_indicator_2.push(parseFloat(ori_data[key][targets[1]]));
+            }
+
+            array_date.reverse(); //remember to reverse
+            array_indicator_1.reverse(); array_indicator_2.reverse();
+
+            Highcharts.chart('chart_container', {
+                chart: { zoomType: 'x' },
+                title: { text: indicator_fullname },
+                subtitle: {
+                    useHTML:true,
+                    text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+                },
+                xAxis: {
+                    categories: array_date,
+                    tickPositioner: function() {
+                        let res = [];
+                        for(let i = 0; i < this.categories.length; i++) {
+                            if(i % 10 == 0) 
+                                res.push(this.categories.length - 1 - i);
+                        }
+                        return res;
+                    }
+                },
+                yAxis: {
+                    title: { text: indicator },
+                    marker:{ enabled: true, symbol:'square', radius: 1, },
+                },
+                tooltip: {
+                    crosshairs: true, shared: true
+                },
+                series: [{
+                    name: stock_symbol + ' ' + targets[0],
+                    data: array_indicator_1,
+                    lineWidth: 1,
+                    marker: { enabled: true, symbol:'square', radius: 2 }
+                },
+                {
+                    name: stock_symbol + ' ' + targets[1],
+                    data: array_indicator_2,
+                    lineWidth: 1,
+                    marker: { enabled: true, symbol:'square', radius: 2 }
+                }]
+            });
+        }
+
+
+        function createThreeLineChart(jsonObj, indicator){
+            var meta = jsonObj['Meta Data'];
+            var stock_symbol = meta['1: Symbol'];
+            var indicator_fullname = meta['2: Indicator']; //full name
+            var ori_data = jsonObj['Technical Analysis: ' + indicator]; //full size data
+
+            for (var currentDate in ori_data) 
+                break;
+
+            var array_date = []; //date, x axis
+            var array_indicator_1 = [], array_indicator_2 = [], array_indicator_3 = []; //indicator data
+
+            //get sub keys names, 'Real Middle Band', 'Real Lower Band', 'Real Upper Band'
+            for(var key in ori_data) { 
+                var targets = Object.keys(ori_data[key]); //sub keys
+                break; //just run once iter to get sub keys names
+            }
+
+            var cnt = 0;
+            for(var key in ori_data) { //date, 2017-10-18
+                if(cnt++ >= 126) break;
+                array_date.push(key.substring(5).replace(/-/g, "\/"));
+                array_indicator_1.push(parseFloat(ori_data[key][targets[0]]));
+                array_indicator_2.push(parseFloat(ori_data[key][targets[1]]));
+                array_indicator_3.push(parseFloat(ori_data[key][targets[2]]));
+            }
+
+            array_date.reverse(); //remember to reverse
+            array_indicator_1.reverse(); array_indicator_2.reverse(); array_indicator_3.reverse();
+
+            Highcharts.chart('chart_container', {
+                chart: { zoomType: 'x' },
+                title: { text: indicator_fullname },
+                subtitle: {
+                    useHTML:true,
+                    text: "<a style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+                },
+                xAxis: {
+                    categories: array_date,
+                    tickPositioner: function() {
+                        let res = [];
+                        for(let i = 0; i < this.categories.length; i++) {
+                            if(i % 10 == 0) 
+                                res.push(this.categories.length - 1 - i);
+                        }
+                        return res;
+                    }
+                },
+                yAxis: {
+                    title: { text: indicator },
+                    marker:{ enabled: true, symbol:'square', radius: 1, },
+                },
+                tooltip: {
+                    crosshairs: true, shared: true
+                },
+                series: [{
+                    name: stock_symbol + ' ' + targets[0],
+                    data: array_indicator_1,
+                    lineWidth: 1,
+                    marker: { enabled: true, symbol:'square', radius: 2 }
+                },
+                {
+                    name: stock_symbol + ' ' + targets[1],
+                    data: array_indicator_2,
+                    lineWidth: 1,
+                    marker: { enabled: true, symbol:'square', radius: 2 }
+                },
+                {
+                    name: stock_symbol + ' ' + targets[2],
+                    data: array_indicator_3,
+                    lineWidth: 1,
+                    marker: { enabled: true, symbol:'square', radius: 2 }
+                }]
+            });
+        }
+    </script>
+</html>
