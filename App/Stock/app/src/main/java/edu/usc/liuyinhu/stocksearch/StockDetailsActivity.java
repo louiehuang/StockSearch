@@ -58,6 +58,7 @@ public class StockDetailsActivity extends AppCompatActivity {
         configureBackButton(); //tool bar button, go back to home page
 
 
+
     }
 
 

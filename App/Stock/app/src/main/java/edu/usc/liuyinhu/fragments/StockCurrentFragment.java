@@ -10,11 +10,24 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 
 import edu.usc.liuyinhu.R;
-import edu.usc.liuyinhu.models.StockName;
-import edu.usc.liuyinhu.services.AutoCompleteService;
+import edu.usc.liuyinhu.services.StockPriceService;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -32,9 +45,16 @@ public class StockCurrentFragment extends Fragment {
      */
     private static final String ARG_SECTION_NUMBER = "section_number";
     private static final String ARG_STOCK_SYMBOL = "symbol";
-    private String symbol;
 
+    private String symbol;
+    private String selectedIndicator;
+
+    View rootView;
     TextView textView;
+    Spinner spinner_indicators;
+    Button btn_change;
+    WebView wv_price;
+
 
     public StockCurrentFragment() {
     }
@@ -52,40 +72,124 @@ public class StockCurrentFragment extends Fragment {
         return fragment;
     }
 
+
+
     //https://stackoverflow.com/questions/23333092/right-approach-to-call-web-serviceapi-from-fragment-class
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_stock_details_current, container, false);
+
+        //if view has already been created, just return it
+        if(rootView != null)
+            return rootView;
+
+        //else, create a new view
+        rootView = inflater.inflate(R.layout.fragment_stock_details_current, container, false);
         this.symbol = getArguments().getString(ARG_STOCK_SYMBOL); //"AAPL"
 
         Log.i(TAG, "symbol: " + symbol);
 
         textView = rootView.findViewById(R.id.tv_test);
-        requestData(this.symbol);
+
+        requestPrice(this.symbol);
+
+
+
+        //spinner
+        spinner_indicators = rootView.findViewById(R.id.spinner_indicators);
+        String[] indicatorItems = new String[]{"Price", "SMA", "EMA", "STOCH", "MACD", "BBANDS", "RSI", "ADX", "CCI"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, indicatorItems);
+        spinner_indicators.setAdapter(adapter);
+        spinner_indicators.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String item = parent.getItemAtPosition(position).toString();
+                selectedIndicator = item;
+                Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+
+        btn_change = rootView.findViewById(R.id.btn_change);
+        btn_change.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i(TAG, "selected: " + selectedIndicator);
+                //have to use another thread to call js function
+                wv_price.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        wv_price.loadUrl("javascript:interfaceCreateChart('" + selectedIndicator +"')");
+                    }
+                });
+            }
+        });
+
+
+
+        //For the chart data, you should call API using JS.
+        //http://blog.csdn.net/carson_ho/article/details/64904691
+        //https://stackoverflow.com/questions/23556794/pass-variables-from-android-activity-to-javascript
+
+        //create webView
+        wv_price = rootView.findViewById(R.id.wv_price);
+        wv_price.getSettings().setJavaScriptEnabled(true);
+        wv_price.loadUrl("file:///android_asset/charts.html"); //create html
+
+        //notice that loadUrl is async!!! so to call function, make sure all functions have been loaded
+        wv_price.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                wv_price.loadUrl("javascript:interfaceInitiate('" + symbol + "')");
+            }
+        });
+
+
+        ImageButton imgBtn_fav = rootView.findViewById(R.id.imgBtn_fav);
+        imgBtn_fav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
 
         return rootView;
     }
 
 
-    private void requestData(String symbol) {
-        Log.i(TAG, "request");
+    private void requestPrice(String symbol) {
+        Log.i(TAG, "requestPrice");
 
-        AutoCompleteService webService =
-                AutoCompleteService.retrofit.create(AutoCompleteService.class);
-        Call<StockName[]> call = webService.stockNameItems(symbol);
-        call.enqueue(new Callback<StockName[]>() {
+        StockPriceService webService =
+                StockPriceService.retrofit.create(StockPriceService.class);
+
+        Call<ResponseBody> call = webService.stockPrice(symbol);
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<StockName[]> call, Response<StockName[]> response) {
-                StockName[] stockNameItems = response.body();
-                Log.i(TAG, stockNameItems[0].toString());
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> rawResponse) {
+                try {
+                    String res = rawResponse.body().string();
+                    JSONObject obj = new JSONObject(res);
 
-                textView.setText(stockNameItems[0].toString());
+                    textView.setText(obj.getJSONObject("Meta Data").getString("1. Information"));
+                    Log.i(TAG, obj.getJSONObject("Meta Data").getString("1. Information"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
             @Override
-            public void onFailure(Call<StockName[]> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
             }
         });
+
+
+
     }
+
 
 }

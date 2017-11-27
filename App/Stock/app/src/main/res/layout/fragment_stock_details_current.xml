@@ -1,31 +1,195 @@
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/constraintLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="edu.usc.liuyinhu.fragments.PlaceholderFragment">
+    android:fillViewport="true"
+    tools:context="edu.usc.liuyinhu.fragments.StockCurrentFragment">
 
-    <TextView
-        android:id="@+id/tv_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Stock Details"
-        android:textColor="#000000"
-        android:textSize="24sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/constraintLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp">
 
-    <TextView
-        android:id="@+id/tv_test"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:text="Test"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_title" />
-</android.support.constraint.ConstraintLayout>
+        <RelativeLayout
+            android:id="@+id/relativeLayout_nav"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:text="Stock Details"
+                android:textColor="#000000"
+                android:textSize="24sp" />
+
+
+            <ImageButton
+                android:id="@+id/imgBtn_fav"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:adjustViewBounds="true"
+                android:background="#ffffff"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_star_border_black_48dp" />
+
+            <ImageButton
+                android:id="@+id/imgBtn_share"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_toStartOf="@+id/imgBtn_fav"
+                android:adjustViewBounds="true"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/facebook"/>
+
+        </RelativeLayout>
+
+
+        <TableLayout
+            android:id="@+id/tableLayout_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/relativeLayout_nav">
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.40"
+                    android:text="Stock Symbol"
+                    android:textStyle="bold" />
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.60"
+                    android:text="AAPL" />
+             </TableRow>
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.40"
+                    android:text="Last Price"
+                    android:textStyle="bold" />
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.60"
+                    android:text="157.41" />
+            </TableRow>
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.40"
+                    android:text="Change"
+                    android:textStyle="bold" />
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.60"
+                    android:text="5.64 (3.58%)" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.40"
+                    android:text="Timestamp"
+                    android:textStyle="bold" />
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.60"
+                    android:text="2017-11-06 06:12:28 EDT" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.40"
+                    android:text="Test"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tv_test"
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.60"
+                    android:text="test" />
+            </TableRow>
+
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.35"
+                    android:text="Indicators"
+                    android:textStyle="bold" />
+
+
+                <Spinner
+                    android:id="@+id/spinner_indicators"
+                    android:layout_weight="0.30"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:spinnerMode="dropdown" />
+
+                <Button
+                    android:id="@+id/btn_change"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.35"
+                    android:background="#ffffff"
+                    android:text="Change" />
+
+
+            </TableRow>
+
+        </TableLayout>
+
+        <WebView
+            android:id="@+id/wv_price"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tableLayout_details" >
+        </WebView>
+
+    </android.support.constraint.ConstraintLayout>
+
+</ScrollView>
