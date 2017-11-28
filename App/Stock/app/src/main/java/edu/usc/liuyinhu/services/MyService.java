@@ -7,6 +7,7 @@ import android.util.Log;
 
 import java.io.IOException;
 
+import edu.usc.liuyinhu.interfaces.AutoCompleteService;
 import edu.usc.liuyinhu.models.StockName;
 import retrofit2.Call;
 

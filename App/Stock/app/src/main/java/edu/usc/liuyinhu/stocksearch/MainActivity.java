@@ -24,7 +24,9 @@ import java.util.List;
 import edu.usc.liuyinhu.R;
 import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
 import edu.usc.liuyinhu.models.StockName;
+import edu.usc.liuyinhu.models.StockNews;
 import edu.usc.liuyinhu.services.VolleyNetworkService;
+import edu.usc.liuyinhu.util.DateConverter;
 
 
 public class MainActivity extends AppCompatActivity{
@@ -60,7 +62,7 @@ public class MainActivity extends AppCompatActivity{
             public void afterTextChanged(Editable editable) {}
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                Log.i(TAG, "onTextChanged, isComingFromSelect: " + isComingFromSelect);
+//                Log.i(TAG, "onTextChanged, isComingFromSelect: " + isComingFromSelect);
                 if(isComingFromSelect){
                     isComingFromSelect = false;
                     return;
@@ -78,7 +80,7 @@ public class MainActivity extends AppCompatActivity{
                 if (item instanceof StockName){
                     StockName stock = (StockName) item;
                     ac_stock_input.setText(stock.getSymbol());
-                    Log.i(TAG, "after select, isComingFromSelect: " + isComingFromSelect);
+//                    Log.i(TAG, "after select, isComingFromSelect: " + isComingFromSelect);
                 }
             }
         });
@@ -103,7 +105,11 @@ public class MainActivity extends AppCompatActivity{
         testBtn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                requestAutoCompleteDataTest();
+
+//                requestAutoCompleteDataTest();
+                requestNewsDataTest();
+
+
             }
         });
     }
@@ -120,6 +126,9 @@ public class MainActivity extends AppCompatActivity{
                     //parse autocomplete
                     parseStockNames(response.toString());
                     displayData();
+                }else if(requestType.equals("GET_news")){
+                    //parse news
+                    parseStockNews(response.toString(), 5);
                 }
             }
             @Override
@@ -169,11 +178,49 @@ public class MainActivity extends AppCompatActivity{
 
 
 
+
     private void requestAutoCompleteDataTest() {
         //http://10.0.2.2:3000/autocomplete?symbol=AAPL
         String feed = "autocomplete?symbol=AAPL";
         volleyNetworkService.getDataAsString(GET_AUTOCOMPLETE, feed);
     }
+
+
+    private void requestNewsDataTest() {
+        //http://localhost:3000/news?symbol=AAPL
+        String feed = "news?symbol=AAPL";
+        String GET_NEWS = "GET_news";
+        volleyNetworkService.getDataAsString(GET_NEWS, feed);
+    }
+
+
+
+    private void parseStockNews(String response, Integer limit){
+        DateConverter dateConverter = new DateConverter();
+
+        try {
+            JSONArray jsonArray = new JSONArray(response.toString());
+            for(int i = 0;i < limit; i++){
+                JSONObject news = jsonArray.getJSONObject(i);
+                String title = news.getString("title").trim(); //["Apple: Smart iPhone Decision"]
+                String guid = news.getJSONArray("guid").getJSONObject(0).getString("_");
+                String link = news.getString("link"); //["https:\/\/seekingalpha.com\/symbol\/AAPL\/news?source=feed_symbol_AAPL"]
+                String date = news.getString("pubDate"); //["Mon, 27 Nov 2017 09:00:54 -0500"]
+
+                title = title.substring(2, title.length() - 2); //Apple: Smart iPhone Decision
+                link = link.substring(2, link.length() - 2);
+                date = date.substring(2, date.length() - 2); //Mon, 27 Nov 2017 09:00:54 -0500
+                date = dateConverter.convertDateToLA(date);  //Mon, 27 Nov 2017 06:00:54 PST
+
+                StockNews stockNews = new StockNews(title, guid, link, date);
+                Log.i(TAG, stockNews.toString());
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
 
 

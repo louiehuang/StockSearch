@@ -1,4 +1,4 @@
-package edu.usc.liuyinhu.services;
+package edu.usc.liuyinhu.interfaces;
 
 import edu.usc.liuyinhu.models.StockName;
 import retrofit2.Call;
