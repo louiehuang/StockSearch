@@ -38,6 +38,7 @@ public class StockNewsFragment  extends Fragment {
     private static final String TAG = "StockNewsFragment";
     private static final String ARG_STOCK_SYMBOL = "symbol";
     private static final String GET_NEWS = "GET_news";
+    private static final Integer NEWS_ITEM_LIMIT = 5;
 
     VolleyCallbackListener callbackListener = null;
     VolleyNetworkService volleyNetworkService = null;
@@ -70,13 +71,13 @@ public class StockNewsFragment  extends Fragment {
         if(rootView != null)
             return rootView;
 
-        //volley init
-        initVolleyCallback(); //call back
-        volleyNetworkService = new VolleyNetworkService(callbackListener, getContext());
-
         //else, create a new view
         rootView = inflater.inflate(R.layout.fragment_stock_details_news, container, false);
         this.symbol = getArguments().getString(ARG_STOCK_SYMBOL); //"AAPL"
+
+        //volley init
+        initVolleyCallback(); //call back
+        volleyNetworkService = new VolleyNetworkService(callbackListener, getContext());
 
         Log.i(TAG, this.symbol);
 
@@ -94,7 +95,7 @@ public class StockNewsFragment  extends Fragment {
                 Log.d(TAG, "Volley requester " + requestType);
                 Log.d(TAG, "Volley Stock News: " + response);
                 if(requestType.equals(GET_NEWS)){
-                    parseStockNews(response.toString(), 5); //parse news
+                    parseStockNews(response.toString()); //parse news, NEWS_ITEM_LIMIT = 5
                     updateListView();
                 }
             }
@@ -130,13 +131,13 @@ public class StockNewsFragment  extends Fragment {
     }
 
 
-    private void parseStockNews(String response, Integer limit){
+    private void parseStockNews(String response){
         Log.i(TAG, response);
         newsList = new ArrayList<>();
         DateConverter dateConverter = new DateConverter();
         try {
-            JSONArray jsonArray = new JSONArray(response.toString());
-            for(int i = 0;i < limit; i++){
+            JSONArray jsonArray = new JSONArray(response);
+            for(int i = 0;i < NEWS_ITEM_LIMIT; i++){
                 JSONObject news = jsonArray.getJSONObject(i);
                 String title = news.getString("title").trim(); //["Apple: Smart iPhone Decision"]
                 String guid = news.getJSONArray("guid").getJSONObject(0).getString("_"); //https://seekingalpha.com/MarketCurrent:3314432

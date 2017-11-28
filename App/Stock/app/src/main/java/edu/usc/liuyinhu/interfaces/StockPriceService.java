@@ -1,4 +1,4 @@
-package edu.usc.liuyinhu.services;
+package edu.usc.liuyinhu.interfaces;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;

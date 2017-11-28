@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity{
     private static final String GET_AUTOCOMPLETE = "GET_auto_complete";
 
     AutoCompleteTextView ac_stock_input;
+    Integer autoCompleteLimit = 5;
+
     List<StockName> stockNameList;
     ArrayAdapter<StockName> acAdapter;
     VolleyCallbackListener callbackListener = null;
@@ -116,9 +118,10 @@ public class MainActivity extends AppCompatActivity{
             public void notifySuccess(String requestType, Object response) {
                 Log.d(TAG, "Volley requester " + requestType);
                 Log.d(TAG, "Volley String: " + response);
+                //process auto complete returned data
                 if(requestType.equals(GET_AUTOCOMPLETE)){
                     //parse autocomplete
-                    parseStockNames(response.toString());
+                    parseStockNames(response.toString(), autoCompleteLimit);
                     displayData();
                 }
             }
@@ -140,11 +143,11 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-    private void parseStockNames(String response){
+    private void parseStockNames(String response, Integer limit){
         stockNameList = new ArrayList<>();
         try {
             JSONArray jsonArray = new JSONArray(response.toString());
-            for(int i = 0;i < jsonArray.length();i++){
+            for(int i = 0;i < limit; i++){
                 JSONObject stock = jsonArray.getJSONObject(i);
                 String stock_symbol = stock.getString("Symbol");
                 String stock_name = stock.getString("Name");

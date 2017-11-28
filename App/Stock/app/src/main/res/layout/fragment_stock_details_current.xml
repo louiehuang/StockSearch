@@ -75,57 +75,62 @@
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:background="@drawable/table_row_border">
                 <TextView
                     style="@style/TableRowTextView"
                     android:layout_weight="0.40"
-                    android:text="Stock Symbol"
+                    android:text="@string/text_stock_symbol"
                     android:textStyle="bold" />
                 <TextView
+                    android:id="@+id/tv_symbol"
                     style="@style/TableRowTextView"
-                    android:layout_weight="0.60"
-                    android:text="AAPL" />
+                    android:layout_weight="0.60" />
              </TableRow>
 
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:background="@drawable/table_row_border">
                 <TextView
                     style="@style/TableRowTextView"
                     android:layout_weight="0.40"
-                    android:text="Last Price"
+                    android:text="@string/text_last_price"
                     android:textStyle="bold" />
                 <TextView
+                    android:id="@+id/tv_lastPrice"
                     style="@style/TableRowTextView"
-                    android:layout_weight="0.60"
-                    android:text="157.41" />
+                    android:layout_weight="0.60" />
             </TableRow>
 
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:background="@drawable/table_row_border">
                 <TextView
                     style="@style/TableRowTextView"
                     android:layout_weight="0.40"
-                    android:text="Change"
+                    android:text="@string/text_change"
                     android:textStyle="bold" />
                 <TextView
+                    android:id="@+id/tv_change"
                     style="@style/TableRowTextView"
-                    android:layout_weight="0.60"
-                    android:text="5.64 (3.58%)" />
+                    android:layout_weight="0.60" />
             </TableRow>
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:background="@drawable/table_row_border">
                 <TextView
                     style="@style/TableRowTextView"
                     android:layout_weight="0.40"
-                    android:text="Timestamp"
+                    android:text="@string/text_timestamp"
                     android:textStyle="bold" />
                 <TextView
+                    android:id="@+id/tv_timestamp"
                     style="@style/TableRowTextView"
                     android:layout_weight="0.60"
                     android:text="2017-11-06 06:12:28 EDT" />
@@ -133,46 +138,90 @@
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:background="@drawable/table_row_border">
                 <TextView
                     style="@style/TableRowTextView"
                     android:layout_weight="0.40"
-                    android:text="Test"
+                    android:text="@string/text_open"
                     android:textStyle="bold" />
                 <TextView
-                    android:id="@+id/tv_test"
+                    android:id="@+id/tv_open"
                     style="@style/TableRowTextView"
-                    android:layout_weight="0.60"
-                    android:text="test" />
+                    android:layout_weight="0.60"/>
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/table_row_border">
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.40"
+                    android:text="@string/text_close"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tv_close"
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.60"/>
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/table_row_border">
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.40"
+                    android:text="@string/text_day_range"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tv_dayRange"
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.60" />
             </TableRow>
 
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:background="@drawable/table_row_border">
+                <TextView
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.40"
+                    android:text="@string/text_volume"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tv_volume"
+                    style="@style/TableRowTextView"
+                    android:layout_weight="0.60" />
+            </TableRow>
 
 
+            <!--Spinner to change charts-->
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="8dp">
                 <TextView
                     style="@style/TableRowTextView"
                     android:layout_weight="0.35"
                     android:text="Indicators"
                     android:textStyle="bold" />
-
                 <Spinner
                     android:id="@+id/spinner_indicators"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.30"
                     android:spinnerMode="dropdown" />
-
                 <Button
                     android:id="@+id/btn_change"
                     android:layout_width="0dp"
+                    android:background="@android:color/transparent"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.35"
-                    android:text="Change" />
-
-
+                    android:text="Change"
+                    android:textAlignment="center" />
             </TableRow>
 
         </TableLayout>

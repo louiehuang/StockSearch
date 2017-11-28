@@ -1,11 +1,12 @@
-package edu.usc.liuyinhu.util;
-
+import java.util.Date;
+import java.util.TimeZone;
+import java.util.Locale;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
+
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 
 /**
  * Created by hlyin on 27/11/2017.
@@ -13,17 +14,44 @@ import java.util.TimeZone;
 
 public class DateConverter {
 
+    public static void main(String[] args){
+
+        DecimalFormat df = new DecimalFormat("0.00"); //2 decimal, make sure have the trailing 0's.
+        df.setRoundingMode(RoundingMode.FLOOR);
+
+        Float num = Float.parseFloat("0.1000");
+        System.out.println(df.format(num));
+
+
+        convertDateToLA("Mon, 27 Nov 2017 09:00:54 -0500");
+
+        convertDateWithTimeZone("2017-10-19 16:00:00", "US/Eastern");
+    }
+
+    public static String convertDateWithTimeZone(String dateString, String timeZone){
+        TimeZone zone = TimeZone.getTimeZone(timeZone);
+        if(zone.useDaylightTime()){
+            dateString = dateString + " EST";//EST
+        }else{
+            dateString = dateString + " EDT";//EST
+        }
+        System.out.println(dateString);
+        return dateString;
+    }
+
 
     /**
-     * Convert GMT time to PDT/PST time (Los Angeles time zone)<br/>
-     * Sample input: "Mon, 27 Nov 2017 09:00:54 -0500"<br/>
-     * https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html<br/>
-     * template: "EEE, DD MMM yyyy HH:mm:ss Z"<br/>
+     * Convert GMT time to PDT/PST time (Los Angeles time zone)
+     * Sample input: "Mon, 27 Nov 2017 09:00:54 -0500"
+     * https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html
+     * template: "EEE, DD MMM yyyy HH:mm:ss Z"
      * @param dateString
      * @return
      */
     public static String convertDateToLA(String dateString){
         String formatPattern = "EEE, dd MMM yyyy HH:mm:ss Z";
+
+        System.out.println(dateString);
         DateFormat utcFormat = new SimpleDateFormat(formatPattern, Locale.US);
         utcFormat.setTimeZone(TimeZone.getTimeZone("UTC")); //"GMT"
 
@@ -46,25 +74,13 @@ public class DateConverter {
             dateString = dateString + " PDT";//PST
         }
 
+        System.out.println(dateString);
         return dateString;
     }
 
 
-    /**
-     * fake method, timeZone will always be US/Eastern
-     * @param dateString
-     * @param timeZone
-     * @return
-     */
-    public static String convertDateWithTimeZone(String dateString, String timeZone){
-        TimeZone zone = TimeZone.getTimeZone(timeZone);
-        if(zone.useDaylightTime()){
-            dateString = dateString + " EST";//EST
-        }else{
-            dateString = dateString + " EDT";//EST
-        }
-        return dateString;
-    }
+
+
 
 
 
