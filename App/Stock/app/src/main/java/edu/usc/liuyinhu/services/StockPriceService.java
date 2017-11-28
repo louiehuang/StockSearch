@@ -13,17 +13,6 @@ import retrofit2.http.Query;
 
 public interface StockPriceService {
 
-//    String BASE_URL = "http://dev.markitondemand.com/";
-//    String FEED = "MODApis/Api/v2/Lookup/json";
-//
-//    Retrofit retrofit = new Retrofit.Builder()
-//            .baseUrl(BASE_URL)
-//            .addConverterFactory(GsonConverterFactory.create())
-//            .build();
-//    @GET(FEED)
-//    Call<ResponseBody> stockPrice(@Query("input") String symbol);
-
-
     //http://localhost:3000/price?symbol=AAPL
     String BASE_URL = "http://10.0.2.2:3000/";
     String FEED = "price";

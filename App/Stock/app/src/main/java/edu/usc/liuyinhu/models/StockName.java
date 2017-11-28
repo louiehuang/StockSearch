@@ -20,6 +20,12 @@ public class StockName implements Parcelable {
         Exchange = in.readString();
     }
 
+    public StockName(String symbol, String name, String exchange) {
+        Symbol = symbol;
+        Name = name;
+        Exchange = exchange;
+    }
+
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(Symbol);
