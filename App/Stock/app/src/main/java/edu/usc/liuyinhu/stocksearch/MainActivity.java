@@ -31,6 +31,8 @@ public class MainActivity extends AppCompatActivity{
     private static final String TAG = "MainActivity";
     private static final String GET_AUTOCOMPLETE = "GET_auto_complete";
 
+    private String symbol; //user input symbol
+
     AutoCompleteTextView ac_stock_input;
     Integer autoCompleteLimit = 5;
 
@@ -68,7 +70,8 @@ public class MainActivity extends AppCompatActivity{
                     return;
                 }
                 if(s.toString().trim().length() >= 1) {
-                        requestAutoCompleteData(s.toString().trim().toUpperCase());
+                    symbol = s.toString().trim().toUpperCase();
+                    requestAutoCompleteData(symbol);
                 }
             }
         });
@@ -79,7 +82,8 @@ public class MainActivity extends AppCompatActivity{
                 Object item = parent.getItemAtPosition(position);
                 if (item instanceof StockName){
                     StockName stock = (StockName) item;
-                    ac_stock_input.setText(stock.getSymbol());
+                    symbol = stock.getSymbol();
+                    ac_stock_input.setText(symbol);
 //                    Log.i(TAG, "after select, isComingFromSelect: " + isComingFromSelect);
                 }
             }
@@ -94,9 +98,13 @@ public class MainActivity extends AppCompatActivity{
         btn_getQuote.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
+                if(!isInputValidate()) //validation check
+                    return;
                 Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
-                intent.putExtra("symbol", "AAPL");
+                intent.putExtra("symbol", symbol);
                 startActivity(intent);
+//                symbol = null; //reset symbol
+//                ac_stock_input.setText(""); //rest input text
             }
         });
 
@@ -105,9 +113,17 @@ public class MainActivity extends AppCompatActivity{
         testBtn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                requestAutoCompleteDataTest();
+
             }
         });
+    }
+
+    private boolean isInputValidate(){
+        if(null == symbol || symbol.length() == 0)
+            return false;
+
+        int length = symbol.replaceAll("\\s+", "").length();
+        return (length > 0);
     }
 
 
@@ -119,7 +135,7 @@ public class MainActivity extends AppCompatActivity{
                 Log.d(TAG, "Volley requester " + requestType);
                 Log.d(TAG, "Volley String: " + response);
                 //process auto complete returned data
-                if(requestType.equals(GET_AUTOCOMPLETE)){
+                if(requestType.equals(GET_AUTOCOMPLETE) && null != response){
                     //parse autocomplete
                     parseStockNames(response.toString(), autoCompleteLimit);
                     displayData();
@@ -147,7 +163,10 @@ public class MainActivity extends AppCompatActivity{
         stockNameList = new ArrayList<>();
         try {
             JSONArray jsonArray = new JSONArray(response.toString());
-            for(int i = 0;i < limit; i++){
+            limit = limit < jsonArray.length() ? limit : jsonArray.length(); //make sure limit is valid
+            if(limit == 0)
+                return;
+            for(int i = 0; i < limit; i++){
                 JSONObject stock = jsonArray.getJSONObject(i);
                 String stock_symbol = stock.getString("Symbol");
                 String stock_name = stock.getString("Name");
@@ -168,15 +187,6 @@ public class MainActivity extends AppCompatActivity{
             ac_stock_input.setAdapter(acAdapter);
             ac_stock_input.showDropDown(); //refresh
         }
-    }
-
-
-
-
-    private void requestAutoCompleteDataTest() {
-        //http://10.0.2.2:3000/autocomplete?symbol=AAPL
-        String feed = "autocomplete?symbol=AAPL";
-        volleyNetworkService.getDataAsString(GET_AUTOCOMPLETE, feed);
     }
 
 

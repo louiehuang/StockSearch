@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.TableLayout;
 import android.widget.TextView;
 
 import com.android.volley.VolleyError;
@@ -49,6 +50,9 @@ public class StockCurrentFragment extends Fragment {
     VolleyNetworkService volleyNetworkService = null;
 
     View rootView;
+
+    TableLayout tableLayout_details;
+    TextView tv_errorMsg; //initially, android:visibility = "gone"
 
     /**** Table TextView ****/
     TextView tv_symbol; TextView tv_lastPrice; TextView tv_change; TextView tv_timestamp;
@@ -131,6 +135,8 @@ public class StockCurrentFragment extends Fragment {
      * Init all TextViews
      */
     private void initAllTextView() {
+        tableLayout_details = rootView.findViewById(R.id.tableLayout_details);
+        tv_errorMsg = rootView.findViewById(R.id.tv_errorMsg);
         tv_symbol = rootView.findViewById(R.id.tv_symbol);
         tv_lastPrice = rootView.findViewById(R.id.tv_lastPrice);
         tv_change = rootView.findViewById(R.id.tv_change);
@@ -139,6 +145,9 @@ public class StockCurrentFragment extends Fragment {
         tv_close = rootView.findViewById(R.id.tv_close);
         tv_dayRange = rootView.findViewById(R.id.tv_dayRange);
         tv_volume = rootView.findViewById(R.id.tv_volume);
+
+        tableLayout_details.setVisibility(TableLayout.VISIBLE);
+        tv_errorMsg.setVisibility(TextView.INVISIBLE);
     }
 
 
@@ -222,6 +231,10 @@ public class StockCurrentFragment extends Fragment {
             @Override
             public void notifyError(String requestType,VolleyError error) {
                 Log.d(TAG, "Volley: " + "That didn't work!");
+                //no data returned, handle exceptions (show user message "Failed to load data.")
+
+                tableLayout_details.setVisibility(TableLayout.INVISIBLE);
+                tv_errorMsg.setVisibility(TextView.VISIBLE);
             }
         };
     }

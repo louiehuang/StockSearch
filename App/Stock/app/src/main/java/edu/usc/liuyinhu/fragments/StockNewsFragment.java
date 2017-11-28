@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.android.volley.VolleyError;
 
@@ -45,6 +46,7 @@ public class StockNewsFragment  extends Fragment {
 
     private String symbol;
     View rootView;
+    TextView tv_errorMsg;
     ListView lv_news;
     List<StockNews> newsList;
 
@@ -75,6 +77,11 @@ public class StockNewsFragment  extends Fragment {
         rootView = inflater.inflate(R.layout.fragment_stock_details_news, container, false);
         this.symbol = getArguments().getString(ARG_STOCK_SYMBOL); //"AAPL"
 
+        lv_news = rootView.findViewById(R.id.lv_news);
+        tv_errorMsg = rootView.findViewById(R.id.tv_errorMsg);
+        lv_news.setVisibility(ListView.VISIBLE);
+        tv_errorMsg.setVisibility(TextView.GONE);
+
         //volley init
         initVolleyCallback(); //call back
         volleyNetworkService = new VolleyNetworkService(callbackListener, getContext());
@@ -103,13 +110,15 @@ public class StockNewsFragment  extends Fragment {
             public void notifyError(String requestType,VolleyError error) {
                 Log.d(TAG, "Volley requester " + requestType);
                 Log.d(TAG, "Volley: " + "That didn't work!");
+
+                lv_news.setVisibility(ListView.GONE);
+                tv_errorMsg.setVisibility(TextView.VISIBLE);
             }
         };
     }
 
 
     private void updateListView(){
-        lv_news = rootView.findViewById(R.id.lv_news);
         NewsAdapter newsAdapter = new NewsAdapter(newsList);
         lv_news.setAdapter(newsAdapter);
 

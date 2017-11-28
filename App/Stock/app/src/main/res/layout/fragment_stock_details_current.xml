@@ -63,6 +63,24 @@
         </RelativeLayout>
 
 
+
+        <TextView
+            android:id="@+id/tv_errorMsg"
+            android:visibility="invisible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Failed to load data."
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:textSize="24sp"
+            android:textColor="#000000"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/ll_spinnerBar"
+            app:layout_constraintTop_toBottomOf="@+id/relativeLayout_nav" />
+
+
+
         <TableLayout
             android:id="@+id/tableLayout_details"
             android:layout_width="match_parent"
@@ -132,8 +150,7 @@
                 <TextView
                     android:id="@+id/tv_timestamp"
                     style="@style/TableRowTextView"
-                    android:layout_weight="0.60"
-                    android:text="2017-11-06 06:12:28 EDT" />
+                    android:layout_weight="0.60" />
             </TableRow>
 
             <TableRow
@@ -197,34 +214,37 @@
                     android:layout_weight="0.60" />
             </TableRow>
 
-
-            <!--Spinner to change charts-->
-            <TableRow
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="8dp">
-                <TextView
-                    style="@style/TableRowTextView"
-                    android:layout_weight="0.35"
-                    android:text="Indicators"
-                    android:textStyle="bold" />
-                <Spinner
-                    android:id="@+id/spinner_indicators"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.30"
-                    android:spinnerMode="dropdown" />
-                <Button
-                    android:id="@+id/btn_change"
-                    android:layout_width="0dp"
-                    android:background="@android:color/transparent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.35"
-                    android:text="Change"
-                    android:textAlignment="center" />
-            </TableRow>
-
         </TableLayout>
+
+
+        <!--Spinner to change charts-->
+        <LinearLayout
+            android:id="@+id/ll_spinnerBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/tableLayout_details" >
+
+            <TextView
+                style="@style/TableRowTextView"
+                android:layout_weight="0.35"
+                android:text="Indicators"
+                android:textStyle="bold" />
+            <Spinner
+                android:id="@+id/spinner_indicators"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.30"
+                android:spinnerMode="dropdown" />
+            <Button
+                android:id="@+id/btn_change"
+                android:layout_width="0dp"
+                android:background="@android:color/transparent"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.35"
+                android:text="Change"
+                android:textAlignment="center" />
+
+        </LinearLayout>
 
         <WebView
             android:id="@+id/wv_indicator"
@@ -234,7 +254,7 @@
             android:layout_marginStart="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tableLayout_details" >
+            app:layout_constraintTop_toBottomOf="@+id/ll_spinnerBar" >
         </WebView>
 
     </android.support.constraint.ConstraintLayout>
