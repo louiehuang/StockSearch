@@ -5,9 +5,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import edu.usc.liuyinhu.R;
 import edu.usc.liuyinhu.models.StockNews;
@@ -19,18 +18,10 @@ import edu.usc.liuyinhu.models.StockNews;
 public class NewsAdapter extends BaseAdapter {
 
     private static final String TAG = NewsAdapter.class.getSimpleName();
-    ArrayList<StockNews> newsArray;
+    List<StockNews> newsArray;
 
-    public NewsAdapter() {
-        newsArray = new ArrayList<>();
-        newsArray.add(new StockNews("title1", "1", "louie", "2017-11-27"));
-        newsArray.add(new StockNews("title2", "1", "louie", "2017-11-27"));
-        newsArray.add(new StockNews("title3", "1", "louie", "2017-11-27"));
-        newsArray.add(new StockNews("title4", "1", "louie", "2017-11-27"));
-        newsArray.add(new StockNews("title5", "1", "louie", "2017-11-27"));
-        newsArray.add(new StockNews("title6", "1", "louie", "2017-11-27"));
-        newsArray.add(new StockNews("title7", "1", "louie", "2017-11-27"));
-        newsArray.add(new StockNews("title8", "1", "louie", "2017-11-27"));
+    public NewsAdapter(List<StockNews> newsList) {
+        this.newsArray = newsList;
     }
 
     @Override
@@ -61,17 +52,22 @@ public class NewsAdapter extends BaseAdapter {
         tv_news_title.setText(dataModel.getTitle());
 
         TextView tv_news_author = view.findViewById(R.id.tv_news_author);
-        tv_news_author.setText("...");
+        String authorText = "Author: " + dataModel.getAuthor();
+        tv_news_author.setText(authorText);
 
         TextView tv_news_date = view.findViewById(R.id.tv_news_date);
-        tv_news_date.setText(dataModel.getPubDate());
+        String dateText = "Date: " + dataModel.getPubDate();
+        tv_news_date.setText(dateText);
 
-        view.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Toast.makeText(parent.getContext(), "view clicked: " + dataModel.toString(), Toast.LENGTH_SHORT).show();
-            }
-        });
+//        view.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                //Toast.makeText(parent.getContext(), "view clicked: " + dataModel.toString(), Toast.LENGTH_SHORT).show();
+//                String news_url = dataModel.getLink();
+//                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(news_url));
+//                startActivity(intent);
+//            }
+//        });
 
         return view;
     }

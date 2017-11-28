@@ -26,7 +26,7 @@ public class VolleyNetworkService {
     VolleyCallbackListener callbackListener = null; //call back
     RequestQueue requestQueue; //for Volley to call stock API
 
-    private VolleyNetworkService(VolleyCallbackListener resultCallback, Context context)
+    public VolleyNetworkService(VolleyCallbackListener resultCallback, Context context)
     {
         callbackListener = resultCallback;
         requestQueue = Volley.newRequestQueue(context.getApplicationContext());

@@ -7,6 +7,7 @@ package edu.usc.liuyinhu.models;
 public class StockNews {
 
     private String title;
+    private String author;
     private String guid;
     private String link;
     private String pubDate; //publish date
@@ -15,8 +16,9 @@ public class StockNews {
 
     }
 
-    public StockNews(String title, String guid, String link, String pubDate){
+    public StockNews(String title, String author, String guid, String link, String pubDate){
         this.title = title;
+        this.author = author;
         this.guid = guid;
         this.link = link;
         this.pubDate = pubDate;
@@ -25,7 +27,7 @@ public class StockNews {
 
     @Override
     public String toString() {
-        return title + ", " + pubDate + ", " + guid  + ", " + link;
+        return title + ", " + author + ", "+ pubDate + ", " + guid  + ", " + link;
     }
 
 
@@ -59,6 +61,14 @@ public class StockNews {
 
     public void setPubDate(String pubDate) {
         this.pubDate = pubDate;
+    }
+
+
+    public String getAuthor() {
+        return author;
+    }
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
 }
