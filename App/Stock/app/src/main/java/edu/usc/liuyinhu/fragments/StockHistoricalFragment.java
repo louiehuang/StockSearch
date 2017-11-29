@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
 
 import edu.usc.liuyinhu.R;
 
@@ -21,6 +22,7 @@ public class StockHistoricalFragment  extends Fragment {
 
     private String symbol;
     View rootView;
+    ProgressBar pb_loadingStockChart;
     WebView wv_historical;
 
 
@@ -42,7 +44,6 @@ public class StockHistoricalFragment  extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
         //if view has already been created, just return it
         if(rootView != null)
             return rootView;
@@ -53,21 +54,35 @@ public class StockHistoricalFragment  extends Fragment {
 
         Log.i(TAG, "symbol: " + symbol);
 
-        //For the chart data, you should call API using JS.
-        //create webView
+        pb_loadingStockChart = rootView.findViewById(R.id.pb_loadingStockChart);
         wv_historical = rootView.findViewById(R.id.wv_historical);
+
+//        initVisibility(); //no need for this specific task (only a web view, it has no view before finish loading)
+
+        //create webView
         wv_historical.getSettings().setJavaScriptEnabled(true);
         wv_historical.loadUrl("file:///android_asset/historicalChart.html"); //create html
-
         //notice that loadUrl is async!!! so to call function, make sure all functions have been loaded
         wv_historical.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 wv_historical.loadUrl("javascript:interfaceInitiate('" + symbol + "')");
+                updateProgressBar();
             }
         });
 
         return rootView;
+    }
+
+
+//    private void initVisibility() {
+//        pb_loadingStockChart.setVisibility(ProgressBar.VISIBLE);
+//        wv_historical.setVisibility(WebView.INVISIBLE);
+//    }
+
+    private void updateProgressBar(){
+        pb_loadingStockChart.setVisibility(ProgressBar.INVISIBLE);
+//        wv_historical.setVisibility(WebView.VISIBLE);
     }
 
 

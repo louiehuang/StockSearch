@@ -94,6 +94,11 @@ public class MainActivity extends AppCompatActivity{
         configureFavoriteStockList(); //favorite stock list view
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateFavoriteList();
+    }
 
     /***************************** Button, Get Quote and Clear  *****************************/
     private void configureQueryButton() {
@@ -145,6 +150,10 @@ public class MainActivity extends AppCompatActivity{
                 }
                 if(s.toString().trim().length() >= 1) {
                     symbol = s.toString().trim().toUpperCase();
+
+                    //This is when click auto complete item, text now is like: "AAPL - APPLE INC (NASDAQ)"
+                    if(symbol.contains(" - ")) //do not send request for this finished text
+                        return;
                     requestAutoCompleteData(symbol);
                 }
             }
@@ -157,7 +166,6 @@ public class MainActivity extends AppCompatActivity{
                 if (item instanceof StockName){
                     StockName stock = (StockName) item;
                     symbol = stock.getSymbol();
-                    ac_stock_input.setText(symbol);
 //                    Log.i(TAG, "after select, isComingFromSelect: " + isComingFromSelect);
                 }
             }
@@ -339,15 +347,29 @@ public class MainActivity extends AppCompatActivity{
     /***************************** ListView, for Favorite Stock List *****************************/
     private void configureFavoriteStockList() {
         Log.i(TAG, selectedSortField + ", " + selectedOrderRule);
-
         lv_favorite = findViewById(R.id.lv_favorite);
+        updateFavoriteList();
+    }
 
+    private void reSortFavoriteStockList(){
+        Log.i(TAG, selectedSortField + ", " + selectedOrderRule);
+        Collections.sort(favoriteStockList, new FavoriteStockComparator(selectedSortField, selectedOrderRule));
+        FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
+        favoriteListAdapter.notifyDataSetChanged();
+        lv_favorite.setAdapter(favoriteListAdapter);
+    }
+
+    /**
+     * after user click add/delete stock to/from its favorite list,
+     * the favorite list here(homepage) should also be updated, update it in onResume()
+     * fetch list from SharedPreferences
+     */
+    private void updateFavoriteList(){
         StorageService storageService = StorageService.getInstance(this); //get storage instance
         //fetch favoriteStockList
         favoriteStockList = storageService.getFavoriteStockList("favoriteStockList");
         if(favoriteStockList == null) //if no list
             favoriteStockList = new ArrayList<>();
-
         FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
         lv_favorite.setAdapter(favoriteListAdapter);
         lv_favorite.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -360,15 +382,6 @@ public class MainActivity extends AppCompatActivity{
             }
         });
     }
-
-    private void reSortFavoriteStockList(){
-        Log.i(TAG, selectedSortField + ", " + selectedOrderRule);
-        Collections.sort(favoriteStockList, new FavoriteStockComparator(selectedSortField, selectedOrderRule));
-        FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
-        favoriteListAdapter.notifyDataSetChanged();
-        lv_favorite.setAdapter(favoriteListAdapter);
-    }
-
 
     /***************************** ListView, for Favorite Stock List *****************************/
 

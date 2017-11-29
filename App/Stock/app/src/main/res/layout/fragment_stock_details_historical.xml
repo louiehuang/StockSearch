@@ -11,6 +11,16 @@
         android:layout_width="match_parent"
         android:layout_height="0dp">
 
+        <!--If loading, show this ProgressBar and hide WebView-->
+        <ProgressBar
+            android:id="@+id/pb_loadingStockChart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
         <WebView
             android:id="@+id/wv_historical"
             android:layout_width="match_parent"

@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.android.volley.VolleyError;
@@ -47,6 +48,7 @@ public class StockNewsFragment extends Fragment {
     private String symbol;
     View rootView;
     TextView tv_errorMsg;
+    ProgressBar pb_loadingNews;
     ListView lv_news;
     List<StockNews> newsList;
 
@@ -79,7 +81,9 @@ public class StockNewsFragment extends Fragment {
 
         lv_news = rootView.findViewById(R.id.lv_news);
         tv_errorMsg = rootView.findViewById(R.id.tv_errorMsg);
-        lv_news.setVisibility(ListView.VISIBLE);
+        pb_loadingNews = rootView.findViewById(R.id.pb_loadingNews);
+        pb_loadingNews.setVisibility(ProgressBar.VISIBLE);
+        lv_news.setVisibility(ListView.GONE);
         tv_errorMsg.setVisibility(TextView.GONE);
 
         //volley init
@@ -104,6 +108,8 @@ public class StockNewsFragment extends Fragment {
                 if(requestType.equals(GET_NEWS)){
                     parseStockNews(response.toString()); //parse news, NEWS_ITEM_LIMIT = 5
                     updateListView();
+                    pb_loadingNews.setVisibility(ProgressBar.GONE);
+                    lv_news.setVisibility(ListView.VISIBLE);
                 }
             }
             @Override
@@ -111,8 +117,8 @@ public class StockNewsFragment extends Fragment {
                 Log.d(TAG, "Volley requester " + requestType);
                 Log.d(TAG, "Volley: " + "That didn't work!");
 
-                lv_news.setVisibility(ListView.GONE);
                 tv_errorMsg.setVisibility(TextView.VISIBLE);
+                lv_news.setVisibility(ListView.GONE);
             }
         };
     }

@@ -4,19 +4,31 @@
     android:layout_width="fill_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
+    android:gravity="center_vertical"
     tools:context="edu.usc.liuyinhu.fragments.StockNewsFragment">
 
+    <!--If loading, show this TextView and hide ListView-->
     <TextView
         android:id="@+id/tv_errorMsg"
-        android:visibility="visible"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Failed to load news data."
+        android:layout_gravity="center_vertical"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
+        android:text="Failed to load news data."
+        android:textAlignment="center"
+        android:textColor="#000000"
         android:textSize="24sp"
-        android:textColor="#000000" />
+        android:visibility="gone" />
+
+    <!--If loading, show this ProgressBar and hide WebView-->
+    <ProgressBar
+        android:id="@+id/pb_loadingNews"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_horizontal|center_vertical"
+        android:visibility="visible" />
 
 
     <ListView
@@ -25,7 +37,8 @@
         android:layout_height="match_parent"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
 
 
 </LinearLayout>

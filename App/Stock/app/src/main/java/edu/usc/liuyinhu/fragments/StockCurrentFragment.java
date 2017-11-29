@@ -17,6 +17,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TextView;
@@ -27,6 +28,7 @@ import com.android.volley.VolleyError;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -35,11 +37,16 @@ import java.util.Iterator;
 import java.util.List;
 
 import edu.usc.liuyinhu.R;
+import edu.usc.liuyinhu.interfaces.StockPriceService;
 import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
 import edu.usc.liuyinhu.models.FavoriteStock;
 import edu.usc.liuyinhu.services.StorageService;
 import edu.usc.liuyinhu.services.VolleyNetworkService;
 import edu.usc.liuyinhu.util.DateConverter;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -59,6 +66,7 @@ public class StockCurrentFragment extends Fragment {
 
     TableLayout tableLayout_details;
     TextView tv_errorMsg; //initially, android:visibility = "gone"
+    ProgressBar pb_loadingTable;
 
     /**** FB and Favorite ImageButton ****/
     ImageButton imgBtn_fb_share;
@@ -131,11 +139,29 @@ public class StockCurrentFragment extends Fragment {
         /**************************** WebView ****************************/
         configureWebView();
 
+
+        /**************************** ProgressBar ****************************/
+        configureProgressBar();
+        /**************************** ProgressBar ****************************/
+
         /*************************** Request Data ************************/
-        requestStockDetails(this.symbol);
+        requestStockDetails(this.symbol); //volley, timeout=15s
+//        requestPrice(this.symbol); //retrofit2
         /*************************** Request Data ************************/
 
         return rootView;
+    }
+
+
+    private void configureProgressBar() {
+        pb_loadingTable = rootView.findViewById(R.id.pb_loadingTable);
+        pb_loadingTable.setVisibility(ProgressBar.VISIBLE);
+        tableLayout_details.setVisibility(TableLayout.INVISIBLE);
+    }
+
+    private void updateProgressBar(){
+        pb_loadingTable.setVisibility(ProgressBar.INVISIBLE);
+        tableLayout_details.setVisibility(TableLayout.VISIBLE);
     }
 
 
@@ -144,7 +170,6 @@ public class StockCurrentFragment extends Fragment {
     private void configureShareAndFav() {
         /**************************** FB ImageButton ****************************/
         imgBtn_fb_share = rootView.findViewById(R.id.imgBtn_fb_share);
-
 
 
         /**************************** Favorite ImageButton ****************************/
@@ -314,6 +339,7 @@ public class StockCurrentFragment extends Fragment {
                 Log.d(TAG, "Volley Stock Details: " + response);
                 if(requestType.equals(GET_STOCK_DETAILS)){
                     updateStockDetailsTable(response.toString()); //parse and update, and create currentStock
+                    updateProgressBar();
                 }
             }
             @Override
@@ -322,6 +348,7 @@ public class StockCurrentFragment extends Fragment {
                 //no data returned, handle exceptions (show user message "Failed to load data.")
 
                 tableLayout_details.setVisibility(TableLayout.INVISIBLE);
+                pb_loadingTable.setVisibility(ProgressBar.INVISIBLE);
                 tv_errorMsg.setVisibility(TextView.VISIBLE);
                 currentStock = null;
             }
@@ -411,6 +438,35 @@ public class StockCurrentFragment extends Fragment {
                 return true;
         }
         return false;
+    }
+
+
+
+
+
+    /**************************** Retrofit ****************************/
+    private void requestPrice(String symbol) {
+        Log.i(TAG, "requestPrice");
+        StockPriceService webService =
+                StockPriceService.retrofit.create(StockPriceService.class);
+        Call<ResponseBody> call = webService.stockPrice(symbol);
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> rawResponse) {
+                try {
+                    String res = rawResponse.body().string();
+                    Log.i(TAG, "response: " + res);
+                    updateStockDetailsTable(res); //parse and update, and create currentStock
+                    updateProgressBar();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.i(TAG, "error requesting price， " + t.getMessage());
+            }
+        });
     }
 
 }

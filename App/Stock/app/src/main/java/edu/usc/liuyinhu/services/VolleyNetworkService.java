@@ -3,6 +3,7 @@ package edu.usc.liuyinhu.services;
 import android.content.Context;
 import android.util.Log;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -21,6 +22,7 @@ import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
 public class VolleyNetworkService {
     private static final String TAG = "VolleyNetworkService";
     private static final String BASE_URL = "http://10.0.2.2:3000/";
+    private static final Integer TIMEOUT_LIMIT = 15000;
 
     private static VolleyNetworkService instance = null;
     VolleyCallbackListener callbackListener = null; //call back
@@ -56,13 +58,14 @@ public class VolleyNetworkService {
 
     public void getDataAsString(final String requestType, String feed){
         String queryURL = BASE_URL + feed;
+        Log.d(TAG + ": ", requestType + ", url: " + queryURL);
         try {
             StringRequest stringRequest = new StringRequest(Request.Method.GET, queryURL,
                     new Response.Listener<String>() {
                 @Override
                 public void onResponse(String response) {
                     if(null != callbackListener && null != response) {
-                        Log.d(TAG + ": ", "Response: " + response.toString());
+                        Log.d(TAG + ": ", requestType + ", Response: " + response.toString());
                         callbackListener.notifySuccess(requestType, response);
                     }
                 }
@@ -75,6 +78,12 @@ public class VolleyNetworkService {
                     }
                 }
             });
+
+            //set time out to 15s since price api response very slow
+            stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                    TIMEOUT_LIMIT,
+                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
             requestQueue.add(stringRequest);
         }catch(Exception e){
