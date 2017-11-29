@@ -20,6 +20,7 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.VolleyError;
 
@@ -62,6 +63,8 @@ public class StockCurrentFragment extends Fragment {
     /**** FB and Favorite ImageButton ****/
     ImageButton imgBtn_fb_share;
     ImageButton imgBtn_fav;
+    FavoriteStock currentStock = null; //current stock in FavoriteStock format (get ready to add to favorite list)
+    boolean isInFavorite = false; //is current stock is in favorite stock list?
     List<FavoriteStock> favoriteStockList;
     StorageService storageService;
     /**** FB and Favorite ImageButton ****/
@@ -96,7 +99,6 @@ public class StockCurrentFragment extends Fragment {
     }
 
 
-
     //https://stackoverflow.com/questions/23333092/right-approach-to-call-web-serviceapi-from-fragment-class
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -119,7 +121,9 @@ public class StockCurrentFragment extends Fragment {
         initAllTextView();
 
 
+        /**************************** FB and Favorite ImageButton ****************************/
         configureShareAndFav();
+        /**************************** FB and Favorite ImageButton ****************************/
 
         /**************************** Spinner ****************************/
         configureSpinnerBar();
@@ -138,35 +142,82 @@ public class StockCurrentFragment extends Fragment {
     //https://stackoverflow.com/questions/22984696/storing-array-list-object-in-sharedpreferences
 
     private void configureShareAndFav() {
+        /**************************** FB ImageButton ****************************/
         imgBtn_fb_share = rootView.findViewById(R.id.imgBtn_fb_share);
 
-        storageService = StorageService.getInstance(getContext()); //get storage instance
-        favoriteStockList = new ArrayList<>(); //need to read
-        favoriteStockList.add(new FavoriteStock(
-                "AAPL", 96.78, 0.16, 0.03, new Date().getTime()
-        ));
-        favoriteStockList.add(new FavoriteStock(
-                "MSFT", 86.72, 1.23, 0.19, new Date().getTime() + 1
-        ));
 
-        //add to favorite list, store stock, use Shared Preferences
+
+        /**************************** Favorite ImageButton ****************************/
+        storageService = StorageService.getInstance(getContext()); //get storage instance
         imgBtn_fav = rootView.findViewById(R.id.imgBtn_fav);
+        //fetch favoriteStockList
+        favoriteStockList = storageService.getFavoriteStockList("favoriteStockList");
+        if(favoriteStockList == null) //if no list
+            favoriteStockList = new ArrayList<>();
+
+        //check whether it's already in favorite list
+        if(isStockInFavoriteList())
+            isInFavorite = true;
+        else
+            isInFavorite = false;
+
+//        Log.i(TAG, "init, is in favoriteStockList: " + isInFavorite);
+        updateFavoriteButtonImage(); //change image
         imgBtn_fav.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i(TAG, "add to fav list");
+//                Log.i(TAG, "click fav button, " + currentStock);
+                if(currentStock == null){
+                    Toast.makeText(getContext(), "No stock data, cannot add", Toast.LENGTH_LONG).show();
+                    return;
+                }
 
-                //store
+//                Log.i(TAG, "is in favoriteStockList: " + isInFavorite);
+                //update
+                if(isInFavorite){
+                    removeCurrentStockToFavList(); //delete
+                }else{
+                    //modify current stock object, add time property
+                    currentStock.setAddTime(new Date().getTime());
+                    addCurrentStockToFavList(); //add
+                }
+
+                //update status
+                isInFavorite = !isInFavorite;
+                updateFavoriteButtonImage();
+
+                //store updated list
                 storageService.setFavoriteStockList("favoriteStockList", favoriteStockList);
 
-                //test read
+                //test read new favoriteStockList
                 List<FavoriteStock> readList = storageService.getFavoriteStockList("favoriteStockList");
-
                 Log.i(TAG, readList.toString());
             }
         });
     }
 
+    private void removeCurrentStockToFavList() {
+        List<FavoriteStock> updatedList = new ArrayList<>();
+        for(FavoriteStock favoriteStock : favoriteStockList){
+            if(favoriteStock.getSymbol().equals(this.symbol)){
+                continue;
+            }
+            updatedList.add(favoriteStock);
+        }
+        this.favoriteStockList = updatedList;
+    }
+
+    private void addCurrentStockToFavList() {
+        favoriteStockList.add(currentStock);
+    }
+
+    private void updateFavoriteButtonImage() {
+        if(isInFavorite){
+            imgBtn_fav.setImageResource(R.drawable.star_filled);
+        }else{
+            imgBtn_fav.setImageResource(R.drawable.star_empty);
+        }
+    }
 
     /**
      * Init all TextViews
@@ -262,7 +313,7 @@ public class StockCurrentFragment extends Fragment {
             public void notifySuccess(String requestType, Object response) {
                 Log.d(TAG, "Volley Stock Details: " + response);
                 if(requestType.equals(GET_STOCK_DETAILS)){
-                    updateStockDetailsTable(response.toString()); //parse and update
+                    updateStockDetailsTable(response.toString()); //parse and update, and create currentStock
                 }
             }
             @Override
@@ -272,6 +323,7 @@ public class StockCurrentFragment extends Fragment {
 
                 tableLayout_details.setVisibility(TableLayout.INVISIBLE);
                 tv_errorMsg.setVisibility(TextView.VISIBLE);
+                currentStock = null;
             }
         };
     }
@@ -336,9 +388,29 @@ public class StockCurrentFragment extends Fragment {
             tv_close.setText(df.format(curClose));
             tv_dayRange.setText(curRange);
             tv_volume.setText(curVolume);
+
+            /******************** create current stock ********************/
+            currentStock = new FavoriteStock(symbol, Double.parseDouble(df.format(curClose)),
+                    Double.parseDouble(df.format(changeNum)), Double.parseDouble(df.format(changePercent))); //leave time
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * check whether currentStock is already in favoriteStockList
+     * @return
+     */
+    private boolean isStockInFavoriteList(){
+        if(favoriteStockList == null || favoriteStockList.size() == 0)
+            return false;
+        for(FavoriteStock favoriteStock : favoriteStockList){
+//            Log.i(TAG, "list symbol: " + favoriteStock.getSymbol() + ", symbol: " + this.symbol);
+            if(favoriteStock.getSymbol().equals(this.symbol))
+                return true;
+        }
+        return false;
     }
 
 }

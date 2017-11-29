@@ -16,6 +16,10 @@ public class DateConverter {
 
     public static void main(String[] args){
 
+        Date d = new Date();
+        long milliseconds = d.getTime();
+        System.out.println(milliseconds);
+
         DecimalFormat df = new DecimalFormat("0.00"); //2 decimal, make sure have the trailing 0's.
         df.setRoundingMode(RoundingMode.FLOOR);
 
@@ -52,20 +56,22 @@ public class DateConverter {
         String formatPattern = "EEE, dd MMM yyyy HH:mm:ss Z";
 
         System.out.println(dateString);
+        //From
         DateFormat utcFormat = new SimpleDateFormat(formatPattern, Locale.US);
         utcFormat.setTimeZone(TimeZone.getTimeZone("UTC")); //"GMT"
+
+        //To
+        DateFormat pstFormat = new SimpleDateFormat(formatPattern, Locale.US);
+        pstFormat.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
 
         Date date = null;
         try {
             date = utcFormat.parse(dateString);
+            dateString = pstFormat.format(date); //Mon, 27 Nov 2017 09:00:54 -0500 => Mon, 27 Nov 2017 01:00:54 -0800
+            dateString = dateString.substring(0, dateString.length() - 6); //Mon, 27 Nov 2017 01:00:54
         } catch (ParseException e) {
             e.printStackTrace();
         }
-
-        DateFormat pstFormat = new SimpleDateFormat(formatPattern, Locale.US);
-        pstFormat.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
-        dateString = pstFormat.format(date); //Mon, 27 Nov 2017 09:00:54 -0500 => Mon, 27 Nov 2017 01:00:54 -0800
-        dateString = dateString.substring(0, dateString.length() - 6); //Mon, 27 Nov 2017 01:00:54
 
         TimeZone zone = TimeZone.getTimeZone("America/Los_Angeles");
         if(zone.useDaylightTime()){

@@ -19,6 +19,13 @@ public class FavoriteStock {
 
     public FavoriteStock(){}
 
+    public FavoriteStock(String symbol, Double price, Double change, Double changePercent){
+        this.symbol = symbol;
+        this.price = price;
+        this.change = change;
+        this.changePercent = changePercent;
+    }
+
     public FavoriteStock(String symbol, Double price, Double change, Double changePercent, Long addTime){
         this.symbol = symbol;
         this.price = price;

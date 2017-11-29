@@ -60,6 +60,7 @@ public class StorageService implements IStorageService<FavoriteStock> {
         return getFavoriteStockListFromSharedPreferences(getTag);
     }
 
+
     /**
      * interface, set FavoriteStockList
      * @param setTag

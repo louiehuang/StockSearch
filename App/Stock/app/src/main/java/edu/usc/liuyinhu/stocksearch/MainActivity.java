@@ -30,7 +30,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -39,6 +38,7 @@ import edu.usc.liuyinhu.adapters.FavoriteListAdapter;
 import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
 import edu.usc.liuyinhu.models.FavoriteStock;
 import edu.usc.liuyinhu.models.StockName;
+import edu.usc.liuyinhu.services.StorageService;
 import edu.usc.liuyinhu.services.VolleyNetworkService;
 import edu.usc.liuyinhu.util.FavoriteStockComparator;
 
@@ -338,30 +338,23 @@ public class MainActivity extends AppCompatActivity{
 
     /***************************** ListView, for Favorite Stock List *****************************/
     private void configureFavoriteStockList() {
-        lv_favorite = findViewById(R.id.lv_favorite);
-        favoriteStockList = new ArrayList<>();
-
         Log.i(TAG, selectedSortField + ", " + selectedOrderRule);
 
-        favoriteStockList.add(new FavoriteStock(
-                "AAPL", 156.78, 0.12, 0.03, new Date().getTime()
-        ));
-        favoriteStockList.add(new FavoriteStock(
-                "MSFT", 86.72, 1.23, 0.19, new Date().getTime() + 1
-        ));
-        favoriteStockList.add(new FavoriteStock(
-                "YHOO", 126.53, 0.01, 0.04, new Date().getTime() + 2
-        ));
+        lv_favorite = findViewById(R.id.lv_favorite);
+
+        StorageService storageService = StorageService.getInstance(this); //get storage instance
+        //fetch favoriteStockList
+        favoriteStockList = storageService.getFavoriteStockList("favoriteStockList");
+        if(favoriteStockList == null) //if no list
+            favoriteStockList = new ArrayList<>();
 
         FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
         lv_favorite.setAdapter(favoriteListAdapter);
-
         lv_favorite.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 final FavoriteStock dataModel = favoriteStockList.get(position);
                 Toast.makeText(parent.getContext(), "view clicked: " + dataModel.toString(), Toast.LENGTH_SHORT).show();
-
                 //Get Quote when clicked
 
             }

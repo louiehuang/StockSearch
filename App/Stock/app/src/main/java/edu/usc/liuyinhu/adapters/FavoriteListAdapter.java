@@ -1,5 +1,6 @@
 package edu.usc.liuyinhu.adapters;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -59,12 +60,11 @@ public class FavoriteListAdapter extends BaseAdapter {
         String dateText = dataModel.getChange() + " (" + dataModel.getChangePercent() + "%)";
         tv_fav_stock_change.setText(dateText);
 
-//        view.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Toast.makeText(parent.getContext(), "view clicked: " + dataModel.toString(), Toast.LENGTH_SHORT).show();
-//            }
-//        });
+        if(dataModel.getChange() >= 0){
+            tv_fav_stock_change.setTextColor(Color.parseColor("#7BB220"));
+        }else{
+            tv_fav_stock_change.setTextColor(Color.RED);
+        }
 
         return view;
     }
