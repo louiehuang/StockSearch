@@ -34,6 +34,17 @@
                 android:textColor="#000000"
                 android:textSize="24sp" />
 
+            <ImageButton
+                android:id="@+id/imgBtn_fb_share"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_toStartOf="@+id/imgBtn_fav"
+                android:adjustViewBounds="true"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/facebook"/>
 
             <ImageButton
                 android:id="@+id/imgBtn_fav"
@@ -47,21 +58,7 @@
                 android:padding="5dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_star_border_black_48dp" />
-
-            <ImageButton
-                android:id="@+id/imgBtn_share"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="8dp"
-                android:layout_toStartOf="@+id/imgBtn_fav"
-                android:adjustViewBounds="true"
-                android:padding="5dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/facebook"/>
-
         </RelativeLayout>
-
 
 
         <TextView

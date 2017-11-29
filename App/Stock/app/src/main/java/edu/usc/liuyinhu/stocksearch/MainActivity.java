@@ -1,16 +1,26 @@
 package edu.usc.liuyinhu.stocksearch;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.Spinner;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.VolleyError;
 
@@ -19,12 +29,18 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import edu.usc.liuyinhu.R;
+import edu.usc.liuyinhu.adapters.FavoriteListAdapter;
 import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
+import edu.usc.liuyinhu.models.FavoriteStock;
 import edu.usc.liuyinhu.models.StockName;
 import edu.usc.liuyinhu.services.VolleyNetworkService;
+import edu.usc.liuyinhu.util.FavoriteStockComparator;
 
 
 public class MainActivity extends AppCompatActivity{
@@ -42,14 +58,72 @@ public class MainActivity extends AppCompatActivity{
     VolleyNetworkService volleyNetworkService = null;
     boolean isComingFromSelect = false; //if actv's text changes because of select operation, do not call onTextChanged
 
+
+    Switch switch_auto_refresh;
+    ImageButton imgBtn_manual_refresh;
+
+    Spinner spinner_sortBy;
+    Spinner spinner_orderRule;
+    private static final String SORT_DEFAULT = "Default";
+    private static final String SORT_SYMBOL = "Symbol";
+    private static final String SORT_PRICE = "Price";
+    private static final String SORT_CHANGE = "Change";
+    private static final String ORDER_ASC = "Ascending";
+    private static final String ORDER_DESC = "Descending";
+    HashMap<String, Integer> sortingMap; //"Symbol" => 1, key is sorting field, value is the position in spinner
+    String selectedSortField = SORT_DEFAULT; //TIME
+    HashMap<String, Integer> orderingMap; //"Ascending" => 1, key is ordering field, value is the position in spinner
+    String selectedOrderRule = ORDER_ASC;
+
+    ListView lv_favorite;
+    List<FavoriteStock> favoriteStockList;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //test switch button
-        configureSwitchButton();
+        configureQueryButton(); //configure query and clear button
 
+        configureAutoComplete(); //auto complete
+
+        configureRefresh(); //refresh switch and image button
+
+        configureSortingSpinner(); //sort and order spinner
+
+        configureFavoriteStockList(); //favorite stock list view
+    }
+
+
+    /***************************** Button, Get Quote and Clear  *****************************/
+    private void configureQueryButton() {
+        //query btn
+        Button btn_getQuote = findViewById(R.id.btn_getQuote);
+        btn_getQuote.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                if(!isInputValidate()) //validation check
+                    return;
+                Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
+                intent.putExtra("symbol", symbol);
+                startActivity(intent);
+            }
+        });
+    }
+    private boolean isInputValidate(){
+        if(null == symbol || symbol.length() == 0)
+            return false;
+
+        int length = symbol.replaceAll("\\s+", "").length();
+        return (length > 0);
+    }
+    /***************************** Button, Get Quote and Clear  *****************************/
+
+
+
+
+    /***************************** AutoCompleteTextView, Using Volley*****************************/
+    private void configureAutoComplete() {
         //volley init
         initVolleyCallback(); //call back
         volleyNetworkService = VolleyNetworkService.getInstance(callbackListener, MainActivity.this);
@@ -90,44 +164,6 @@ public class MainActivity extends AppCompatActivity{
         });
     }
 
-
-
-    private void configureSwitchButton() {
-        //query btn
-        Button btn_getQuote = findViewById(R.id.btn_getQuote);
-        btn_getQuote.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v) {
-                if(!isInputValidate()) //validation check
-                    return;
-                Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
-                intent.putExtra("symbol", symbol);
-                startActivity(intent);
-//                symbol = null; //reset symbol
-//                ac_stock_input.setText(""); //rest input text
-            }
-        });
-
-        //test
-        Button testBtn = findViewById(R.id.test_btn);
-        testBtn.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-    }
-
-    private boolean isInputValidate(){
-        if(null == symbol || symbol.length() == 0)
-            return false;
-
-        int length = symbol.replaceAll("\\s+", "").length();
-        return (length > 0);
-    }
-
-
-    /*****************************volley*****************************/
     void initVolleyCallback(){
         callbackListener = new VolleyCallbackListener() {
             @Override
@@ -149,15 +185,15 @@ public class MainActivity extends AppCompatActivity{
         };
     }
 
-
-
+    /**
+     * first requestAutoCompleteData, then date returned, to callbackListener => notifySuccess()
+     * @param symbol
+     */
     private void requestAutoCompleteData(String symbol) {
         //http://10.0.2.2:3000/autocomplete?symbol=AAPL
         String feed = "autocomplete?symbol=" + symbol;
         volleyNetworkService.getDataAsString(GET_AUTOCOMPLETE, feed);
     }
-
-
 
     private void parseStockNames(String response, Integer limit){
         stockNameList = new ArrayList<>();
@@ -179,7 +215,6 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-
     private void displayData() {
         if (stockNameList != null) {
             acAdapter = new ArrayAdapter<>(
@@ -188,43 +223,160 @@ public class MainActivity extends AppCompatActivity{
             ac_stock_input.showDropDown(); //refresh
         }
     }
+    /***************************** AutoCompleteTextView, Using Volley*****************************/
 
 
 
 
 
+    /***************************** Switch and ImageButton, Auto Refresh and Manual Refresh *****************************/
+    private void configureRefresh() {
+
+    }
+    /***************************** Switch and ImageButton, Auto Refresh and Manual Refresh *****************************/
 
 
-    /*****************************retrofit, import retrofit2.Response;*****************************/
-//    private void requestData(String symbol) {
-//        Log.i(TAG, "request");
-//
-//        //type too fast will cause app crush, how to deal with it???
-//        try {
-//            sleep(300);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        AutoCompleteService webService =
-//                AutoCompleteService.retrofit.create(AutoCompleteService.class);
-//        Call<StockName[]> call = webService.stockNameItems(symbol);
-//        call.enqueue(new Callback<StockName[]>() {
-//            @Override
-//            public void onResponse(Call<StockName[]> call, Response<StockName[]> response) {
-//                StockName[] stockNameItems = response.body();
-//                Toast.makeText(MainActivity.this,
-//                        "Received " + stockNameItems.length + " items from service",
-//                        Toast.LENGTH_SHORT).show();
-//                stockNameList = Arrays.asList(stockNameItems);
-//                displayData();
-//                Log.i("MainActivity", stockNameItems[0].toString());
-//            }
-//            @Override
-//            public void onFailure(Call<StockName[]> call, Throwable t) {
-//            }
-//        });
-//    }
 
+
+
+    /***************************** Spinner, for Sorting Favorite List *****************************/
+    private void configureSortingSpinner() {
+        /********** Sorting Field **********/
+        spinner_sortBy = findViewById(R.id.spinner_sortBy);
+        String[] sortingFields = new String[]{"Sort by", SORT_DEFAULT, SORT_SYMBOL, SORT_PRICE, SORT_CHANGE};
+        sortingMap = new HashMap<>(); //<sortingFields, position>
+        for(int i = 0; i < sortingFields.length; i++)
+            sortingMap.put(sortingFields[i], i);
+
+        ArrayAdapter<String> sortingAdapter = new ArrayAdapter<String>(
+                this, android.R.layout.simple_spinner_dropdown_item, sortingFields){
+            @Override
+            public boolean isEnabled(int position) {
+                //position != 0 && position != current Selected Item
+                return !(position == 0 || position == sortingMap.get(selectedSortField));
+            }
+            @Override
+            public boolean areAllItemsEnabled() {
+                return false;
+            }
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                TextView tv = (TextView) view;
+                //position == 0 || position == current Selected Item
+                if(position == 0 || position == sortingMap.get(selectedSortField)) {
+                    tv.setTextColor(Color.GRAY);  // Set the disable item text color
+                }else{
+                    tv.setTextColor(Color.BLACK);
+                }
+                return view;
+            }
+        };
+
+        spinner_sortBy.setAdapter(sortingAdapter);
+        spinner_sortBy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if(position == 0)
+                    return;
+                selectedSortField = parent.getItemAtPosition(position).toString();
+                reSortFavoriteStockList(); //sort favoriteStockList
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
+
+
+        /********** Ordering Rule **********/
+        spinner_orderRule = findViewById(R.id.spinner_orderRule);
+        final String[] orderingRule = new String[]{"Order", ORDER_ASC, ORDER_DESC};
+        orderingMap = new HashMap<>();
+        for(int i = 0; i < orderingRule.length; i++)
+            orderingMap.put(orderingRule[i], i);
+
+        ArrayAdapter<String> orderingAdapter = new ArrayAdapter<String>(
+                this, android.R.layout.simple_spinner_dropdown_item, orderingRule){
+            @Override
+            public boolean isEnabled(int position) {
+                //position != 0 && position != current Selected Item
+                return !(position == 0 || position == orderingMap.get(selectedOrderRule));
+            }
+            @Override
+            public boolean areAllItemsEnabled() {
+                return false;
+            }
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                TextView tv = (TextView) view;
+                //position == 0 || position == current Selected Item
+                if(position == 0 || position == orderingMap.get(selectedOrderRule)) {
+                    tv.setTextColor(Color.GRAY);  // Set the disable item text color
+                }else{
+                    tv.setTextColor(Color.BLACK);
+                }
+                return view;
+            }
+        };
+
+        spinner_orderRule.setAdapter(orderingAdapter);
+        spinner_orderRule.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if(position == 0)
+                    return;
+                selectedOrderRule = parent.getItemAtPosition(position).toString();
+                reSortFavoriteStockList(); //sort favoriteStockList
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
+
+    }
+    /***************************** Spinner, for Sorting Favorite List *****************************/
+
+
+
+
+    /***************************** ListView, for Favorite Stock List *****************************/
+    private void configureFavoriteStockList() {
+        lv_favorite = findViewById(R.id.lv_favorite);
+        favoriteStockList = new ArrayList<>();
+
+        Log.i(TAG, selectedSortField + ", " + selectedOrderRule);
+
+        favoriteStockList.add(new FavoriteStock(
+                "AAPL", 156.78, 0.12, 0.03, new Date().getTime()
+        ));
+        favoriteStockList.add(new FavoriteStock(
+                "MSFT", 86.72, 1.23, 0.19, new Date().getTime() + 1
+        ));
+        favoriteStockList.add(new FavoriteStock(
+                "YHOO", 126.53, 0.01, 0.04, new Date().getTime() + 2
+        ));
+
+        FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
+        lv_favorite.setAdapter(favoriteListAdapter);
+
+        lv_favorite.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                final FavoriteStock dataModel = favoriteStockList.get(position);
+                Toast.makeText(parent.getContext(), "view clicked: " + dataModel.toString(), Toast.LENGTH_SHORT).show();
+
+                //Get Quote when clicked
+
+            }
+        });
+    }
+
+    private void reSortFavoriteStockList(){
+        Log.i(TAG, selectedSortField + ", " + selectedOrderRule);
+        Collections.sort(favoriteStockList, new FavoriteStockComparator(selectedSortField, selectedOrderRule));
+        FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
+        favoriteListAdapter.notifyDataSetChanged();
+        lv_favorite.setAdapter(favoriteListAdapter);
+    }
+
+
+    /***************************** ListView, for Favorite Stock List *****************************/
 
 }

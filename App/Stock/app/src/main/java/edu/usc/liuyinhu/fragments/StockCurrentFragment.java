@@ -28,10 +28,15 @@ import org.json.JSONObject;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import edu.usc.liuyinhu.R;
 import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
+import edu.usc.liuyinhu.models.FavoriteStock;
+import edu.usc.liuyinhu.services.StorageService;
 import edu.usc.liuyinhu.services.VolleyNetworkService;
 import edu.usc.liuyinhu.util.DateConverter;
 
@@ -53,6 +58,13 @@ public class StockCurrentFragment extends Fragment {
 
     TableLayout tableLayout_details;
     TextView tv_errorMsg; //initially, android:visibility = "gone"
+
+    /**** FB and Favorite ImageButton ****/
+    ImageButton imgBtn_fb_share;
+    ImageButton imgBtn_fav;
+    List<FavoriteStock> favoriteStockList;
+    StorageService storageService;
+    /**** FB and Favorite ImageButton ****/
 
     /**** Table TextView ****/
     TextView tv_symbol; TextView tv_lastPrice; TextView tv_change; TextView tv_timestamp;
@@ -107,27 +119,52 @@ public class StockCurrentFragment extends Fragment {
         initAllTextView();
 
 
+        configureShareAndFav();
+
+        /**************************** Spinner ****************************/
+        configureSpinnerBar();
+
+        /**************************** WebView ****************************/
+        configureWebView();
+
         /*************************** Request Data ************************/
         requestStockDetails(this.symbol);
         /*************************** Request Data ************************/
 
-
-        /**************************** Spinner ****************************/
-        initSpinnerBar();
-
-        /**************************** WebView ****************************/
-        initWebView();
+        return rootView;
+    }
 
 
-        ImageButton imgBtn_fav = rootView.findViewById(R.id.imgBtn_fav);
+    //https://stackoverflow.com/questions/22984696/storing-array-list-object-in-sharedpreferences
+
+    private void configureShareAndFav() {
+        imgBtn_fb_share = rootView.findViewById(R.id.imgBtn_fb_share);
+
+        storageService = StorageService.getInstance(getContext()); //get storage instance
+        favoriteStockList = new ArrayList<>(); //need to read
+        favoriteStockList.add(new FavoriteStock(
+                "AAPL", 96.78, 0.16, 0.03, new Date().getTime()
+        ));
+        favoriteStockList.add(new FavoriteStock(
+                "MSFT", 86.72, 1.23, 0.19, new Date().getTime() + 1
+        ));
+
+        //add to favorite list, store stock, use Shared Preferences
+        imgBtn_fav = rootView.findViewById(R.id.imgBtn_fav);
         imgBtn_fav.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.i(TAG, "add to fav list");
 
+                //store
+                storageService.setFavoriteStockList("favoriteStockList", favoriteStockList);
+
+                //test read
+                List<FavoriteStock> readList = storageService.getFavoriteStockList("favoriteStockList");
+
+                Log.i(TAG, readList.toString());
             }
         });
-
-        return rootView;
     }
 
 
@@ -154,7 +191,7 @@ public class StockCurrentFragment extends Fragment {
     /**
      * Init spinner and change Button
      */
-    private void initSpinnerBar() {
+    private void configureSpinnerBar() {
         spinner_indicators = rootView.findViewById(R.id.spinner_indicators);
         btn_change = rootView.findViewById(R.id.btn_change);
         String[] indicatorItems = new String[]{"Price", "SMA", "EMA", "STOCH", "MACD", "BBANDS", "RSI", "ADX", "CCI"};
@@ -190,7 +227,7 @@ public class StockCurrentFragment extends Fragment {
      * reference: https://stackoverflow.com/questions/23556794/pass-variables-from-android-activity-to-javascript
      */
     @SuppressLint("SetJavaScriptEnabled")
-    private void initWebView() {
+    private void configureWebView() {
         wv_indicator = rootView.findViewById(R.id.wv_indicator);
         //For the chart data, you should call API using JS.
         wv_indicator.getSettings().setJavaScriptEnabled(true);

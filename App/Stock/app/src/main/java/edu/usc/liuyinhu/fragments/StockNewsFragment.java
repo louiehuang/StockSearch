@@ -35,7 +35,7 @@ import edu.usc.liuyinhu.util.DateConverter;
  * Created by hlyin on 26/11/2017.
  */
 
-public class StockNewsFragment  extends Fragment {
+public class StockNewsFragment extends Fragment {
     private static final String TAG = "StockNewsFragment";
     private static final String ARG_STOCK_SYMBOL = "symbol";
     private static final String GET_NEWS = "GET_news";

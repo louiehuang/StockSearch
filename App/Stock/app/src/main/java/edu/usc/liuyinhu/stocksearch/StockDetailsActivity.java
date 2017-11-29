@@ -42,6 +42,8 @@ public class StockDetailsActivity extends AppCompatActivity {
 
 
         this.symbol = getIntent().getStringExtra("symbol");
+        toolbar.setTitle(symbol);
+
         Log.i(TAG, this.symbol);
 
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());

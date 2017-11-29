@@ -43,7 +43,7 @@ public class NewsAdapter extends BaseAdapter {
     public View getView(int index, View view, final ViewGroup parent) {
         if (view == null) {
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-            view = inflater.inflate(R.layout.news_list_item, parent, false);
+            view = inflater.inflate(R.layout.list_item_stock_news, parent, false);
         }
 
         final StockNews dataModel = newsArray.get(index);
