@@ -85,8 +85,8 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     /*************************** Refresh Favorite List ************************/
     Switch switch_auto_refresh;
     ImageButton imgBtn_manual_refresh;
-    Integer favoriteSize; //size of favoriteStockList, used when updating, making sure fetch all possibble data
-    Integer finishNum; //number of finished new request (for favorite stock updating)
+    Integer favoriteSize = 0; //size of favoriteStockList, used when updating, making sure fetch all possibble data
+    Integer finishNum = 0; //number of finished new request (for favorite stock updating)
     ProgressBar pb_refreshing;
     List<FavoriteStock> oldFavoriteStockList; //old one, deep copy, to update favoriteStockList directly
     /*************************** Refresh Favorite List ************************/
@@ -330,6 +330,7 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
                     if(refreshTimer != null)
                         refreshTimer.cancel();
                     refreshTimer = null;
+                    pb_refreshing.setVisibility(ProgressBar.INVISIBLE);
                 }
             }
         });
@@ -543,29 +544,45 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
         int index = menuInfo.position;
-
-        Log.i(TAG, index + ", " + item.toString());
-
+//        Log.i(TAG, index + ", " + item.toString());
         switch (item.getItemId()){
             case 0:
-                //do not delete
-
-
+                //do not delete, so do nothing, just show message
                 Toast.makeText(MainActivity.this, "Selected No", Toast.LENGTH_SHORT).show();
                 break;
             case 1:
-                //delete stock from favorite list
+                //try to delete stock from favorite list
                 Log.i(TAG, item.getItemId() + "");
-
-
-                Toast.makeText(MainActivity.this, "Selected Yes", Toast.LENGTH_SHORT).show();
+                /***** if refreshing, do not allow delete item from favorite list *****/
+                //check if is still refreshing
+                if(refreshTimer != null || finishNum < favoriteSize){ //auto and manual
+                    Toast.makeText(MainActivity.this, "Cannot delete stock while refreshing", Toast.LENGTH_SHORT).show();
+                }else{
+                    Toast.makeText(MainActivity.this, "Selected Yes", Toast.LENGTH_SHORT).show();
+                    deleteSelectStock(index);
+                }
                 break;
         }
         return true;
     }
 
 
-    //if refreshing, do not allow delete item from favorite list
+    /**
+     * delete stock in favorite list at specified index
+     * @param index
+     */
+    private void deleteSelectStock(int index) {
+        StorageService storageService = StorageService.getInstance();
+        favoriteStockList.remove(index);
+        Log.i(TAG, "delete: " + index);
+        Log.i(TAG, favoriteStockList.toString());
+
+        //update view
+        updateFavoriteList();
+
+        //overwrite
+
+    }
 
     /***************************** ListView, for Favorite Stock List *****************************/
 
