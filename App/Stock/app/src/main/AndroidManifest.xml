@@ -18,6 +18,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
         <activity android:name=".stocksearch.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,12 +28,26 @@
         </activity>
         <activity
             android:name=".stocksearch.StockDetailsActivity"
+            android:exported="true"
             android:label="@string/title_activity_stock_details"
             android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="918643571616008" />
+            </intent-filter>
         </activity>
+
         <service
             android:name=".services.MyService"
             android:exported="false" />
+
+        <provider android:authorities="com.facebook.app.FacebookContentProvider918643571616008"
+            android:name="com.facebook.FacebookContentProvider"
+            android:exported="true" />
+
     </application>
+
 
 </manifest>

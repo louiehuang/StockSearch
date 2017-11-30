@@ -1,6 +1,8 @@
 package edu.usc.liuyinhu.stocksearch;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -8,6 +10,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +31,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,19 +54,25 @@ public class MainActivity extends AppCompatActivity{
 
     private String symbol; //user input symbol
 
+
+    /*************************** AutoComplete ************************/
     AutoCompleteTextView ac_stock_input;
     Integer autoCompleteLimit = 5;
-
     List<StockName> stockNameList;
     ArrayAdapter<StockName> acAdapter;
     VolleyCallbackListener callbackListener = null;
     VolleyNetworkService volleyNetworkService = null;
     boolean isComingFromSelect = false; //if actv's text changes because of select operation, do not call onTextChanged
+    /*************************** AutoComplete ************************/
 
 
+    /*************************** Refresh ************************/
     Switch switch_auto_refresh;
     ImageButton imgBtn_manual_refresh;
+    /*************************** Refresh ************************/
 
+
+    /*************************** Sort and Order ************************/
     Spinner spinner_sortBy;
     Spinner spinner_orderRule;
     private static final String SORT_DEFAULT = "Default";
@@ -74,9 +85,13 @@ public class MainActivity extends AppCompatActivity{
     String selectedSortField = SORT_DEFAULT; //TIME
     HashMap<String, Integer> orderingMap; //"Ascending" => 1, key is ordering field, value is the position in spinner
     String selectedOrderRule = ORDER_ASC;
+    /*************************** Sort and Order ************************/
 
+
+    /*************************** Favorite List ************************/
     ListView lv_favorite;
     List<FavoriteStock> favoriteStockList;
+    /*************************** Favorite List ************************/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +107,27 @@ public class MainActivity extends AppCompatActivity{
         configureSortingSpinner(); //sort and order spinner
 
         configureFavoriteStockList(); //favorite stock list view
+
+//        generateFacebookKey();
+    }
+
+    private void generateFacebookKey() {
+        //Facebook Add code to print out the key hash
+        try {
+            Log.i(TAG, this.getPackageName());
+            PackageInfo info = getPackageManager().getPackageInfo(
+                    this.getPackageName(), PackageManager.GET_SIGNATURES);
+            for (android.content.pm.Signature signature : info.signatures) {
+                MessageDigest md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                //zCQIX3iqERFGW9mo8PmoOdvditI=
+                Log.i(TAG, Base64.encodeToString(md.digest(), Base64.DEFAULT));
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.i(TAG, "NameNotFoundException: " + e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            Log.i(TAG, "NoSuchAlgorithmException:" + e.getMessage());
+        }
     }
 
     @Override
@@ -109,6 +145,12 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View v) {
                 if(!isInputValidate()) //validation check
                     return;
+
+                //if full name, make it acronym, AAPL - Apple Inc (NASDAQ) => AAPL
+                if(symbol.contains(" - "))
+                    symbol = symbol.substring(0, symbol.indexOf(" - "));
+                Log.i(TAG, "query: " + symbol);
+
                 Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
                 intent.putExtra("symbol", symbol);
                 startActivity(intent);
@@ -237,12 +279,18 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-    /***************************** Switch and ImageButton, Auto Refresh and Manual Refresh *****************************/
+    /***************** Switch and ImageButton, Auto Refresh and Manual Refresh ****************/
     private void configureRefresh() {
 
-    }
-    /***************************** Switch and ImageButton, Auto Refresh and Manual Refresh *****************************/
 
+
+
+        imgBtn_manual_refresh = findViewById(R.id.imgBtn_manual_refresh);
+
+
+
+    }
+    /***************** Switch and ImageButton, Auto Refresh and Manual Refresh ****************/
 
 
 

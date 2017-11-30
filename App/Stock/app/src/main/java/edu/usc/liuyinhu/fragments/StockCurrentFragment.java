@@ -5,12 +5,15 @@ package edu.usc.liuyinhu.fragments;
  */
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.AdapterView;
@@ -24,6 +27,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.VolleyError;
+import com.facebook.CallbackManager;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.widget.ShareDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -70,6 +76,9 @@ public class StockCurrentFragment extends Fragment {
 
     /**** FB and Favorite ImageButton ****/
     ImageButton imgBtn_fb_share;
+    String chartImgURL; //chart image url to share
+    CallbackManager callbackManager;
+    ShareDialog shareDialog;
     ImageButton imgBtn_fav;
     FavoriteStock currentStock = null; //current stock in FavoriteStock format (get ready to add to favorite list)
     boolean isInFavorite = false; //is current stock is in favorite stock list?
@@ -130,6 +139,7 @@ public class StockCurrentFragment extends Fragment {
 
 
         /**************************** FB and Favorite ImageButton ****************************/
+        initFacebook();
         configureShareAndFav();
         /**************************** FB and Favorite ImageButton ****************************/
 
@@ -165,11 +175,70 @@ public class StockCurrentFragment extends Fragment {
     }
 
 
-    //https://stackoverflow.com/questions/22984696/storing-array-list-object-in-sharedpreferences
 
+    /********************************** FB Sharing **********************************/
+    class IndicatorChartJSInterface {
+        /**
+         * This method is also in JS, as interface, to fetch chartImgURL(variable in JS)
+         */
+        @JavascriptInterface
+        public void getImageURL(String chartURL){
+            chartImgURL = chartURL;
+            postToFacebook(); //post to facebook
+        }
+    }
+
+    private void initFacebook() {
+        callbackManager = CallbackManager.Factory.create();
+        shareDialog = new ShareDialog(this);
+    }
+
+
+
+    /**
+     * http://www.jianshu.com/p/0085a0e28e2b
+     */
+    private void postToFacebook(){
+        if(chartImgURL == null || chartImgURL.length() == 0){
+            Toast.makeText(getContext(), "No data, cannot post", Toast.LENGTH_LONG).show();
+            return;
+        }else if(chartImgURL.contains("Too many requests")){
+            Toast.makeText(getContext(), "Too many requests, you have been rate limited", Toast.LENGTH_LONG).show();
+        }
+        Log.i(TAG, chartImgURL);
+        if (ShareDialog.canShow(ShareLinkContent.class)) {
+            ShareLinkContent linkContent = new ShareLinkContent.Builder()
+                    .setContentUrl(Uri.parse(chartImgURL))
+                    .build();
+            shareDialog.show(linkContent);
+        }
+    }
+
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+
+
+    //https://stackoverflow.com/questions/22984696/storing-array-list-object-in-sharedpreferences
     private void configureShareAndFav() {
         /**************************** FB ImageButton ****************************/
         imgBtn_fb_share = rootView.findViewById(R.id.imgBtn_fb_share);
+
+        imgBtn_fb_share.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(currentStock == null){
+                    Toast.makeText(getContext(), "No stock data, cannot post", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                //get chart url from js and post current chart in interface getImageURL()
+                wv_indicator.loadUrl("javascript:getChartImageURL()"); //it's async!!!
+            }
+        });
 
 
         /**************************** Favorite ImageButton ****************************/
@@ -307,6 +376,12 @@ public class StockCurrentFragment extends Fragment {
         wv_indicator = rootView.findViewById(R.id.wv_indicator);
         //For the chart data, you should call API using JS.
         wv_indicator.getSettings().setJavaScriptEnabled(true);
+
+
+        //interface to get variable in JS
+        wv_indicator.addJavascriptInterface(new IndicatorChartJSInterface(), "AndroidGetChart");
+
+
         wv_indicator.loadUrl("file:///android_asset/currentChart.html"); //create html
         //notice that loadUrl is async!!! so to call function, make sure all functions have been loaded
         wv_indicator.setWebViewClient(new WebViewClient() {
@@ -316,6 +391,7 @@ public class StockCurrentFragment extends Fragment {
             }
         });
     }
+
 
 
     /**

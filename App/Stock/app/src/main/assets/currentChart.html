@@ -31,9 +31,13 @@
         var errInLoadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,
         'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 'News': false};
 
+        //chart url
+        var chartImgURL = '';
+
 
         //for java class to call
         function interfaceInitiate(symbol){
+            // console.log(symbol);
             fetchPrice(symbol); //fetch price data
             for (var i in indicators)
               fetchIndicator(symbol, indicators[i]);
@@ -49,9 +53,11 @@
             }else{
                 createThreeLineChart(indicatorJsonObjMap[indicator], indicator); //3
             }
+            shareOnFacebook(indicator); //generate chart url
         }
 
-function fetchPrice(symbol) {
+
+        function fetchPrice(symbol) {
             // console.log("begin fetching: price");
             $.ajax({
                 url: base_url + "price?symbol=" + symbol,
@@ -79,7 +85,6 @@ function fetchPrice(symbol) {
                 async: true
             });
         }
-
 
         function fetchIndicator(symbol, indicator){
             // console.log("begin fetching: " + indicator);
@@ -130,6 +135,46 @@ function fetchPrice(symbol) {
         }
 
 
+        /**
+        * when clicking facebook button, chartImgURL should have been initialized
+        */
+        function getChartImageURL(){
+            AndroidGetChart.getImageURL(chartImgURL); //url or '' if not finish
+        }
+
+
+        /**
+        * export stock chart to facebook
+        */
+        function shareOnFacebook(indicator){
+            //export chart, chart_container
+            var chart = $("#chart_container").highcharts();
+            if(chart == undefined)
+                return;
+            var chartOptions = JSON.stringify(chart.userOptions);
+            var imgURI = encodeURI('async=false&type=jpeg&width=600&options=' + chartOptions); //body
+            var exportImgURL = base_url + "/postImg";
+            // let exportImgURL = "http://localhost:3000/postImg";
+
+            $.ajax({
+                type: 'post',
+                url: exportImgURL,
+                data: imgURI,
+                dataType:'text',
+                success:function(data){
+                    //may return "{"message":"Too many requests, you have been rate limited. Please try again later."}"
+                    //data = "http://export.highcharts.com/charts/chart.3c0ecd5b480c4a2eb672a78a11c0fdad.png"
+                    chartImgURL = data;
+                    console.log(chartImgURL);
+                },
+                error:function(XMLHttpRequest, textStatus, errorThrown){
+                    console.log(XMLHttpRequest.statusText);
+                    console.log(textStatus + ", " + errorThrown);
+                }
+            });
+        }
+
+
         //create charts
         function createPriceChart(jsonObj){
             if(checkIfError(jsonObj, 'Price'))
@@ -161,7 +206,7 @@ function fetchPrice(symbol) {
 
             max_volume = 1.5 * max_volume;
 
-            var priceChart = Highcharts.chart('chart_container', {
+            Highcharts.chart('chart_container', {
                 chart: { zoomType: 'x', width: null },
                 title: { text: symbol + ' Stock Price and Volume' },
                 subtitle: {
