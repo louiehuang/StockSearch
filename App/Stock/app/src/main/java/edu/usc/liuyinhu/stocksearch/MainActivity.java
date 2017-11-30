@@ -15,6 +15,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -29,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import edu.usc.liuyinhu.R;
 import edu.usc.liuyinhu.adapters.FavoriteListAdapter;
@@ -61,13 +64,6 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     /*************************** AutoComplete ************************/
 
 
-    /*************************** Refresh ************************/
-    Switch switch_auto_refresh;
-    ImageButton imgBtn_manual_refresh;
-    ProgressBar pb_refreshing;
-    /*************************** Refresh ************************/
-
-
     /*************************** Sort and Order ************************/
     Spinner spinner_sortBy;
     Spinner spinner_orderRule;
@@ -81,10 +77,16 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     /*************************** Favorite List ************************/
     ListView lv_favorite;
     List<FavoriteStock> favoriteStockList;
+    /*************************** Favorite List ************************/
+
+    /*************************** Refresh Favorite List ************************/
+    Switch switch_auto_refresh;
+    ImageButton imgBtn_manual_refresh;
     Integer favoriteSize; //size of favoriteStockList, used when updating, making sure fetch all possibble data
     Integer finishNum; //number of finished new request (for favorite stock updating)
-    List<FavoriteStock> refreshedFavoriteStockList; //new one
-    /*************************** Favorite List ************************/
+    ProgressBar pb_refreshing;
+    List<FavoriteStock> oldFavoriteStockList; //old one, deep copy, to update favoriteStockList directly
+    /*************************** Refresh Favorite List ************************/
 
 
 
@@ -112,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     @Override
     protected void onResume() {
         super.onResume();
+        constructFavoriteStockListFromStorage();
         updateFavoriteList();
     }
 
@@ -122,19 +125,33 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
         btn_getQuote.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                if(!isInputValidate()) //validation check, invalid input
-                    return;
-
-                //if full name, make it acronym, AAPL - Apple Inc (NASDAQ) => AAPL
-                if(symbol.contains(" - "))
-                    symbol = symbol.substring(0, symbol.indexOf(" - "));
-//                Log.i(TAG, "query: " + symbol);
-
-                Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
-                intent.putExtra("symbol", symbol);
-                startActivity(intent);
+                queryStockInfo(symbol);
             }
         });
+
+        //clear btn
+        Button btn_clear = findViewById(R.id.btn_clear);
+        btn_clear.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                ac_stock_input.setText("");
+            }
+        });
+    }
+
+    /**
+     * start activity, query symbol's details
+     */
+    private void queryStockInfo(String querySymbol){
+        Log.i(TAG, querySymbol);
+        if(!isInputValidate()) //validation check, invalid input
+            return;
+        //if full name, make it acronym, AAPL - Apple Inc (NASDAQ) => AAPL
+        if(querySymbol.contains(" - "))
+            querySymbol = querySymbol.substring(0, querySymbol.indexOf(" - "));
+        Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
+        intent.putExtra("symbol", querySymbol);
+        startActivity(intent);
     }
 
     private boolean isInputValidate(){
@@ -213,26 +230,22 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
                         if(newStockDetails == null)
                             favoriteSize--;
                         else{
-                            refreshedFavoriteStockList.set(index, newStockDetails);
+                            favoriteStockList.set(index, newStockDetails);
                             finishNum++;
                             if(finishNum == favoriteSize){
                                 pb_refreshing.setVisibility(ProgressBar.INVISIBLE);
                                 //update storage and list view
 
-                                Log.i(TAG, refreshedFavoriteStockList.toString());
-
 //                                Collections.sort(refreshedFavoriteStockList, new FavoriteStockComparator(selectedSortField, selectedOrderRule));
 
-                                FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(refreshedFavoriteStockList);
+                                //update list view
+                                FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
                                 lv_favorite.setAdapter(favoriteListAdapter);
 
-//                                //store updated list
-//                                StorageService storageService = StorageService.getInstance();
-//                                //over write favoriteStockList
-//                                storageService.setFavoriteStockList("favoriteStockList", refreshedFavoriteStockList);
-//                                //update list view
-//                                updateFavoriteList();;
-
+                                //store updated list
+                                StorageService storageService = StorageService.getInstance();
+                                //over write favoriteStockList
+                                storageService.setFavoriteStockList("favoriteStockList", favoriteStockList);
                             }
                         }
                     }
@@ -273,55 +286,79 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
 
 
 
-
+    TimerTask refreshTimerTask;
+    Timer refreshTimer;
 
     /***************** Switch and ImageButton, Auto Refresh and Manual Refresh ****************/
     private void configureRefresh() {
         pb_refreshing = findViewById(R.id.pb_refreshing);
 
-        //auto
+        //auto refresh
+        switch_auto_refresh = findViewById(R.id.switch_auto_refresh);
+        switch_auto_refresh.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    pb_refreshing.setVisibility(ProgressBar.VISIBLE);
+                    Log.i(TAG, "Turn on Auto Refresh");
+                    //turn on refreshTimer to refresh automatically
+                    refreshTimerTask = new TimerTask(){
+                        @Override
+                        public void run() {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    refreshFavoriteListOnce();
+//                                    Toast.makeText(getApplicationContext(), "Start Auto Refresh", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    };
+                    refreshTimer = new Timer();
+                    refreshTimer.schedule(refreshTimerTask,0,5000);
+                }else{
+                    Log.i(TAG, "Turn off Auto Refresh");
+                    //turn off refreshTimer
+                    if(refreshTimer != null)
+                        refreshTimer.cancel();
+                    refreshTimer = null;
+                }
+            }
+        });
 
-
-
-        //manual
+        //manual refresh
         imgBtn_manual_refresh = findViewById(R.id.imgBtn_manual_refresh);
         imgBtn_manual_refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 pb_refreshing.setVisibility(ProgressBar.VISIBLE);
-                //get favoriteStockList, by now, we already got this (favoriteStockList initialized onCreate())
-
-                StorageService storageService = StorageService.getInstance(MainActivity.this); //get storage instance
-                favoriteStockList = storageService.getFavoriteStockList("favoriteStockList");
-                //validation check
-                if(favoriteStockList == null || favoriteStockList.size() == 0) { //if no list
-                    Toast.makeText(MainActivity.this, "No favorite stock to refresh", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                favoriteSize = favoriteStockList.size();
-                finishNum = 0;
-
-                //iterate and request new data
-                volleyNetworkService = VolleyNetworkService.getInstance();
-                refreshedFavoriteStockList = new ArrayList<>(); //prepare for updated result
-                for(int i = 0; i < favoriteSize; i++)
-                    refreshedFavoriteStockList.add(null);
-
-                for(int i = 0 ; i < favoriteStockList.size(); i++){
-                    FavoriteStock favoriteStock = favoriteStockList.get(i);
-                    String feed = "price?symbol=" + favoriteStock.getSymbol(); //symbol to query
-                    Log.i(TAG, "Query update: " + feed);
-                    //pass its index to callback to update
-                    volleyNetworkService.getDataAsString(GET_UPDATED_STOCK_DETAILS + "," + i, feed);
-                }
-
-                //update list view, in call back function
-                FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
-                lv_favorite.setAdapter(favoriteListAdapter);
+                refreshFavoriteListOnce();
             }
         });
+    }
 
+    private void refreshFavoriteListOnce() {
+        //1. get favorite stock list as oldFavoriteStockList
+        StorageService storageService = StorageService.getInstance(MainActivity.this); //get storage instance
+        oldFavoriteStockList = storageService.getFavoriteStockList("favoriteStockList");
+        if(oldFavoriteStockList == null || oldFavoriteStockList.size() == 0) { //if no list
+            Toast.makeText(MainActivity.this, "No favorite stock to refresh", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
+        //2. set size and finish number, to know when to update list view
+        favoriteSize = oldFavoriteStockList.size();
+        finishNum = 0;
+
+        //3. iterate and request new data
+        volleyNetworkService = VolleyNetworkService.getInstance();
+        for(int i = 0 ; i < favoriteStockList.size(); i++){
+            FavoriteStock favoriteStock = favoriteStockList.get(i);
+            String feed = "price?symbol=" + favoriteStock.getSymbol(); //symbol to query
+            //pass its index to callback to update
+            volleyNetworkService.getDataAsString(GET_UPDATED_STOCK_DETAILS + "," + i, feed);
+        }
+
+        //4. & 5. store to storage & update list view, done in call back function
     }
     /***************** Switch and ImageButton, Auto Refresh and Manual Refresh ****************/
 
@@ -429,6 +466,7 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     private void configureFavoriteStockList() {
         Log.i(TAG, selectedSortField + ", " + selectedOrderRule);
         lv_favorite = findViewById(R.id.lv_favorite);
+        constructFavoriteStockListFromStorage();
         updateFavoriteList();
     }
 
@@ -445,26 +483,39 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
         storageService.setFavoriteStockList("favoriteStockList", favoriteStockList);
     }
 
+
+    /**
+     * construct favoriteStockList from storage
+     */
+    private void constructFavoriteStockListFromStorage(){
+        StorageService storageService = StorageService.getInstance(this); //get storage instance
+        //fetch favoriteStockList
+        favoriteStockList = storageService.getFavoriteStockList("favoriteStockList");
+        if(favoriteStockList == null) //if no list
+            favoriteStockList = new ArrayList<>();
+    }
+
+
     /**
      * after user click add/delete stock to/from its favorite list,
      * the favorite list here(homepage) should also be updated, update it in onResume()
      * fetch list from SharedPreferences
      */
     private void updateFavoriteList(){
-        StorageService storageService = StorageService.getInstance(this); //get storage instance
-        //fetch favoriteStockList
-        favoriteStockList = storageService.getFavoriteStockList("favoriteStockList");
-        if(favoriteStockList == null) //if no list
-            favoriteStockList = new ArrayList<>();
         FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
         lv_favorite.setAdapter(favoriteListAdapter);
         lv_favorite.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 final FavoriteStock dataModel = favoriteStockList.get(position);
-                Toast.makeText(parent.getContext(), "view clicked: " + dataModel.toString(), Toast.LENGTH_SHORT).show();
-                //Get Quote when clicked
+//                Toast.makeText(parent.getContext(), "view clicked: " + dataModel.getSymbol(), Toast.LENGTH_SHORT).show();
 
+                //here, do not check input validation... since it must be valid
+                String querySymbol = dataModel.getSymbol();
+                Log.i(TAG, querySymbol + ", " + querySymbol.length());
+                Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
+                intent.putExtra("symbol", querySymbol);
+                startActivity(intent);
             }
         });
     }

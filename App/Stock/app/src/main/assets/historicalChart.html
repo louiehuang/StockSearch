@@ -87,24 +87,36 @@
                   useHTML:true,
                   text: "<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
                 },
-                rangeSelector: { selected: 1 },
+                rangeSelector: {
+                      buttons: [{
+                          type: 'month',
+                          count: 1,
+                          text: '1m'
+                      }, {
+                          type: 'month',
+                          count: 3,
+                          text: '3m'
+                      }, {
+                          type: 'month',
+                          count: 6,
+                          text: '6m'
+                      }, {
+                          type: 'year',
+                          count: 1,
+                          text: '1y'
+                      }, {
+                          type: 'all',
+                          text: 'All'
+                      }],
+                      selected: 4
+                 },
                 series: [{
                   name: symbol,
                   data: parseRes,
                   type: 'area',
                   threshold: null,
                   tooltip: { valueDecimals: 2 }
-                }],
-                responsive: {
-                  rules: [{
-                      condition: { maxWidth: 500 },
-                      chartOptions: {
-                          chart: { height: 300 },
-                          subtitle: { text: null },
-                          navigator: { enabled: false }
-                      }
-                  }]
-                }
+                }]
             });
         }
 
