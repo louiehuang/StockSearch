@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import edu.usc.liuyinhu.R;
+import edu.usc.liuyinhu.interfaces.ParamConfigurations;
 import edu.usc.liuyinhu.interfaces.StockPriceService;
 import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
 import edu.usc.liuyinhu.models.FavoriteStock;
@@ -57,10 +58,8 @@ import retrofit2.Response;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class StockCurrentFragment extends Fragment {
+public class StockCurrentFragment extends Fragment implements ParamConfigurations{
     private static final String TAG = "StockCurrentFragment";
-    private static final String ARG_STOCK_SYMBOL = "symbol";
-    private static final String GET_STOCK_DETAILS = "GET_stock_details";
 
     private String symbol;
     private String selectedIndicator;
@@ -137,7 +136,6 @@ public class StockCurrentFragment extends Fragment {
         /*************************** TextView findViewById ************************/
         initAllTextView();
 
-
         /**************************** FB and Favorite ImageButton ****************************/
         initFacebook();
         configureShareAndFav();
@@ -145,9 +143,11 @@ public class StockCurrentFragment extends Fragment {
 
         /**************************** Spinner ****************************/
         configureSpinnerBar();
+        /**************************** Spinner ****************************/
 
         /**************************** WebView ****************************/
         configureWebView();
+        /**************************** WebView ****************************/
 
 
         /**************************** ProgressBar ****************************/
@@ -156,7 +156,6 @@ public class StockCurrentFragment extends Fragment {
 
         /*************************** Request Data ************************/
         requestStockDetails(this.symbol); //volley, timeout=15s
-//        requestPrice(this.symbol); //retrofit2
         /*************************** Request Data ************************/
 
         return rootView;
@@ -177,6 +176,14 @@ public class StockCurrentFragment extends Fragment {
 
 
     /********************************** FB Sharing **********************************/
+    private void initFacebook() {
+        callbackManager = CallbackManager.Factory.create();
+        shareDialog = new ShareDialog(this);
+    }
+
+    /**
+     * For JS, this is the interface to get variable from JS
+     */
     class IndicatorChartJSInterface {
         /**
          * This method is also in JS, as interface, to fetch chartImgURL(variable in JS)
@@ -187,13 +194,6 @@ public class StockCurrentFragment extends Fragment {
             postToFacebook(); //post to facebook
         }
     }
-
-    private void initFacebook() {
-        callbackManager = CallbackManager.Factory.create();
-        shareDialog = new ShareDialog(this);
-    }
-
-
 
     /**
      * http://www.jianshu.com/p/0085a0e28e2b
@@ -218,16 +218,16 @@ public class StockCurrentFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        //coming back from FB sharing page
         callbackManager.onActivityResult(requestCode, resultCode, data);
     }
-
+    /********************************** FB Sharing **********************************/
 
 
     //https://stackoverflow.com/questions/22984696/storing-array-list-object-in-sharedpreferences
     private void configureShareAndFav() {
         /**************************** FB ImageButton ****************************/
         imgBtn_fb_share = rootView.findViewById(R.id.imgBtn_fb_share);
-
         imgBtn_fb_share.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -260,14 +260,12 @@ public class StockCurrentFragment extends Fragment {
         imgBtn_fav.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                Log.i(TAG, "click fav button, " + currentStock);
                 if(currentStock == null){
                     Toast.makeText(getContext(), "No stock data, cannot add", Toast.LENGTH_LONG).show();
                     return;
                 }
 
-//                Log.i(TAG, "is in favoriteStockList: " + isInFavorite);
-                //update
+                //update favorite list
                 if(isInFavorite){
                     removeCurrentStockToFavList(); //delete
                 }else{
@@ -276,7 +274,7 @@ public class StockCurrentFragment extends Fragment {
                     addCurrentStockToFavList(); //add
                 }
 
-                //update status
+                //update stock status
                 isInFavorite = !isInFavorite;
                 updateFavoriteButtonImage();
 
@@ -377,10 +375,8 @@ public class StockCurrentFragment extends Fragment {
         //For the chart data, you should call API using JS.
         wv_indicator.getSettings().setJavaScriptEnabled(true);
 
-
-        //interface to get variable in JS
+        //interface to get variable in JS, for facebook sharing
         wv_indicator.addJavascriptInterface(new IndicatorChartJSInterface(), "AndroidGetChart");
-
 
         wv_indicator.loadUrl("file:///android_asset/currentChart.html"); //create html
         //notice that loadUrl is async!!! so to call function, make sure all functions have been loaded
@@ -391,7 +387,6 @@ public class StockCurrentFragment extends Fragment {
             }
         });
     }
-
 
 
     /**
@@ -412,7 +407,7 @@ public class StockCurrentFragment extends Fragment {
         callbackListener = new VolleyCallbackListener() {
             @Override
             public void notifySuccess(String requestType, Object response) {
-                Log.d(TAG, "Volley Stock Details: " + response);
+//                Log.d(TAG, "Volley Stock Details: " + response);
                 if(requestType.equals(GET_STOCK_DETAILS)){
                     updateStockDetailsTable(response.toString()); //parse and update, and create currentStock
                     updateProgressBar();
@@ -420,9 +415,7 @@ public class StockCurrentFragment extends Fragment {
             }
             @Override
             public void notifyError(String requestType,VolleyError error) {
-                Log.d(TAG, "Volley: " + "That didn't work!");
-                //no data returned, handle exceptions (show user message "Failed to load data.")
-
+                Log.d(TAG, "Volley Error: " + error.getMessage());
                 tableLayout_details.setVisibility(TableLayout.INVISIBLE);
                 pb_loadingTable.setVisibility(ProgressBar.INVISIBLE);
                 tv_errorMsg.setVisibility(TextView.VISIBLE);
@@ -515,7 +508,6 @@ public class StockCurrentFragment extends Fragment {
         }
         return false;
     }
-
 
 
 

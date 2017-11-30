@@ -2,20 +2,14 @@ package edu.usc.liuyinhu.util;
 
 import java.util.Comparator;
 
+import edu.usc.liuyinhu.interfaces.ParamConfigurations;
 import edu.usc.liuyinhu.models.FavoriteStock;
 
 /**
  * Created by hlyin on 28/11/2017.
  */
 
-public class FavoriteStockComparator implements Comparator<FavoriteStock> {
-
-    private static final String SORT_DEFAULT = "Default";
-    private static final String SORT_SYMBOL = "Symbol";
-    private static final String SORT_PRICE = "Price";
-    private static final String SORT_CHANGE = "Change";
-    private static final String ORDER_ASC = "Ascending";
-    private static final String ORDER_DESC = "Descending";
+public class FavoriteStockComparator implements Comparator<FavoriteStock>, ParamConfigurations {
 
     private String selectedSortField = SORT_DEFAULT; //TIME
     private String selectedOrderRule = ORDER_ASC;

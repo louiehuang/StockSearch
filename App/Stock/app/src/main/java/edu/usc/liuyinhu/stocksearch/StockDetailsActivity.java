@@ -58,17 +58,12 @@ public class StockDetailsActivity extends AppCompatActivity {
 
 
         configureBackButton(); //tool bar button, go back to home page
-
-
-
     }
-
 
     private void configureBackButton() {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

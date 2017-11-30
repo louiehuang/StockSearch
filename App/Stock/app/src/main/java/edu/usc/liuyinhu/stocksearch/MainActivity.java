@@ -1,8 +1,6 @@
 package edu.usc.liuyinhu.stocksearch;
 
 import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -10,7 +8,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +17,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -27,12 +25,6 @@ import android.widget.Toast;
 
 import com.android.volley.VolleyError;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,47 +32,45 @@ import java.util.List;
 
 import edu.usc.liuyinhu.R;
 import edu.usc.liuyinhu.adapters.FavoriteListAdapter;
+import edu.usc.liuyinhu.interfaces.ParamConfigurations;
 import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
 import edu.usc.liuyinhu.models.FavoriteStock;
 import edu.usc.liuyinhu.models.StockName;
+import edu.usc.liuyinhu.services.ParseService;
 import edu.usc.liuyinhu.services.StorageService;
 import edu.usc.liuyinhu.services.VolleyNetworkService;
 import edu.usc.liuyinhu.util.FavoriteStockComparator;
 
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity implements ParamConfigurations {
     private static final String TAG = "MainActivity";
-    private static final String GET_AUTOCOMPLETE = "GET_auto_complete";
 
     private String symbol; //user input symbol
 
+    /*********** Volley Network, for autocomplete and favorite list updating ***********/
+    VolleyCallbackListener callbackListener = null;
+    VolleyNetworkService volleyNetworkService = null;
+    /*********** Volley Network, for autocomplete and favorite list updating ***********/
 
     /*************************** AutoComplete ************************/
     AutoCompleteTextView ac_stock_input;
-    Integer autoCompleteLimit = 5;
+    Integer autoCompleteLimit = 5; //show 5 items
     List<StockName> stockNameList;
     ArrayAdapter<StockName> acAdapter;
-    VolleyCallbackListener callbackListener = null;
-    VolleyNetworkService volleyNetworkService = null;
-    boolean isComingFromSelect = false; //if actv's text changes because of select operation, do not call onTextChanged
+    boolean isComingFromSelect = false; //if actv's text changes because of selection operation, do not call onTextChanged
     /*************************** AutoComplete ************************/
 
 
     /*************************** Refresh ************************/
     Switch switch_auto_refresh;
     ImageButton imgBtn_manual_refresh;
+    ProgressBar pb_refreshing;
     /*************************** Refresh ************************/
 
 
     /*************************** Sort and Order ************************/
     Spinner spinner_sortBy;
     Spinner spinner_orderRule;
-    private static final String SORT_DEFAULT = "Default";
-    private static final String SORT_SYMBOL = "Symbol";
-    private static final String SORT_PRICE = "Price";
-    private static final String SORT_CHANGE = "Change";
-    private static final String ORDER_ASC = "Ascending";
-    private static final String ORDER_DESC = "Descending";
     HashMap<String, Integer> sortingMap; //"Symbol" => 1, key is sorting field, value is the position in spinner
     String selectedSortField = SORT_DEFAULT; //TIME
     HashMap<String, Integer> orderingMap; //"Ascending" => 1, key is ordering field, value is the position in spinner
@@ -91,12 +81,21 @@ public class MainActivity extends AppCompatActivity{
     /*************************** Favorite List ************************/
     ListView lv_favorite;
     List<FavoriteStock> favoriteStockList;
+    Integer favoriteSize; //size of favoriteStockList, used when updating, making sure fetch all possibble data
+    Integer finishNum; //number of finished new request (for favorite stock updating)
+    List<FavoriteStock> refreshedFavoriteStockList; //new one
     /*************************** Favorite List ************************/
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //volley init
+        initVolleyCallback(); //init call back
+        volleyNetworkService = VolleyNetworkService.getInstance(callbackListener, MainActivity.this);
 
         configureQueryButton(); //configure query and clear button
 
@@ -107,28 +106,8 @@ public class MainActivity extends AppCompatActivity{
         configureSortingSpinner(); //sort and order spinner
 
         configureFavoriteStockList(); //favorite stock list view
-
-//        generateFacebookKey();
     }
 
-    private void generateFacebookKey() {
-        //Facebook Add code to print out the key hash
-        try {
-            Log.i(TAG, this.getPackageName());
-            PackageInfo info = getPackageManager().getPackageInfo(
-                    this.getPackageName(), PackageManager.GET_SIGNATURES);
-            for (android.content.pm.Signature signature : info.signatures) {
-                MessageDigest md = MessageDigest.getInstance("SHA");
-                md.update(signature.toByteArray());
-                //zCQIX3iqERFGW9mo8PmoOdvditI=
-                Log.i(TAG, Base64.encodeToString(md.digest(), Base64.DEFAULT));
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.i(TAG, "NameNotFoundException: " + e.getMessage());
-        } catch (NoSuchAlgorithmException e) {
-            Log.i(TAG, "NoSuchAlgorithmException:" + e.getMessage());
-        }
-    }
 
     @Override
     protected void onResume() {
@@ -143,13 +122,13 @@ public class MainActivity extends AppCompatActivity{
         btn_getQuote.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                if(!isInputValidate()) //validation check
+                if(!isInputValidate()) //validation check, invalid input
                     return;
 
                 //if full name, make it acronym, AAPL - Apple Inc (NASDAQ) => AAPL
                 if(symbol.contains(" - "))
                     symbol = symbol.substring(0, symbol.indexOf(" - "));
-                Log.i(TAG, "query: " + symbol);
+//                Log.i(TAG, "query: " + symbol);
 
                 Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
                 intent.putExtra("symbol", symbol);
@@ -157,26 +136,20 @@ public class MainActivity extends AppCompatActivity{
             }
         });
     }
+
     private boolean isInputValidate(){
         if(null == symbol || symbol.length() == 0)
             return false;
-
         int length = symbol.replaceAll("\\s+", "").length();
-        return (length > 0);
+        return (length > 0); //not empty and not just only contains space
     }
     /***************************** Button, Get Quote and Clear  *****************************/
 
 
 
-
     /***************************** AutoCompleteTextView, Using Volley*****************************/
     private void configureAutoComplete() {
-        //volley init
-        initVolleyCallback(); //call back
-        volleyNetworkService = VolleyNetworkService.getInstance(callbackListener, MainActivity.this);
-
-        //auto complete
-        ac_stock_input = findViewById(R.id.ac_stock_input);
+        ac_stock_input = findViewById(R.id.ac_stock_input); //auto complete
         ac_stock_input.setThreshold(1); //will start working from first character
         ac_stock_input.addTextChangedListener(new TextWatcher() {
             @Override
@@ -192,7 +165,6 @@ public class MainActivity extends AppCompatActivity{
                 }
                 if(s.toString().trim().length() >= 1) {
                     symbol = s.toString().trim().toUpperCase();
-
                     //This is when click auto complete item, text now is like: "AAPL - APPLE INC (NASDAQ)"
                     if(symbol.contains(" - ")) //do not send request for this finished text
                         return;
@@ -214,26 +186,69 @@ public class MainActivity extends AppCompatActivity{
         });
     }
 
+
     void initVolleyCallback(){
         callbackListener = new VolleyCallbackListener() {
             @Override
             public void notifySuccess(String requestType, Object response) {
-                Log.d(TAG, "Volley requester " + requestType);
-                Log.d(TAG, "Volley String: " + response);
+//                Log.d(TAG, "Volley requester: " + requestType + ", Volley String: " + response);
                 //process auto complete returned data
                 if(requestType.equals(GET_AUTOCOMPLETE) && null != response){
-                    //parse autocomplete
-                    parseStockNames(response.toString(), autoCompleteLimit);
-                    displayData();
+                    stockNameList = ParseService.parseStockNames(response.toString(), autoCompleteLimit); //parse autocomplete
+                    displayData(); //update view
+                }else if(requestType.contains(GET_UPDATED_STOCK_DETAILS)){
+                    if(null == response){
+                        favoriteSize--;
+                    }else{
+                        String[] tmp = requestType.split(",");
+                        int index = Integer.parseInt(tmp[1]);
+                        FavoriteStock oldStockDetails = favoriteStockList.get(index);
+
+                        //parse to get updated FavStock, use oldStockDetails to set change
+                        FavoriteStock newStockDetails = ParseService.parseStockDetailsAsFavoriteStock(oldStockDetails, response.toString()); //
+
+                        Log.i(TAG, "favoriteSize: " + favoriteSize + ", " + oldStockDetails);
+                        Log.i(TAG, newStockDetails.toString());
+
+                        if(newStockDetails == null)
+                            favoriteSize--;
+                        else{
+                            refreshedFavoriteStockList.set(index, newStockDetails);
+                            finishNum++;
+                            if(finishNum == favoriteSize){
+                                pb_refreshing.setVisibility(ProgressBar.INVISIBLE);
+                                //update storage and list view
+
+                                Log.i(TAG, refreshedFavoriteStockList.toString());
+
+//                                Collections.sort(refreshedFavoriteStockList, new FavoriteStockComparator(selectedSortField, selectedOrderRule));
+
+                                FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(refreshedFavoriteStockList);
+                                lv_favorite.setAdapter(favoriteListAdapter);
+
+//                                //store updated list
+//                                StorageService storageService = StorageService.getInstance();
+//                                //over write favoriteStockList
+//                                storageService.setFavoriteStockList("favoriteStockList", refreshedFavoriteStockList);
+//                                //update list view
+//                                updateFavoriteList();;
+
+                            }
+                        }
+                    }
                 }
             }
             @Override
             public void notifyError(String requestType,VolleyError error) {
-                Log.d(TAG, "Volley requester " + requestType);
-                Log.d(TAG, "Volley String: " + "That didn't work!");
+                Log.d(TAG, "Volley requester:" + requestType + ", With Error: " + error.getMessage());
+                if(requestType.equals(GET_UPDATED_STOCK_DETAILS)){
+                    favoriteSize--;
+                }
             }
         };
     }
+
+
 
     /**
      * first requestAutoCompleteData, then date returned, to callbackListener => notifySuccess()
@@ -245,25 +260,6 @@ public class MainActivity extends AppCompatActivity{
         volleyNetworkService.getDataAsString(GET_AUTOCOMPLETE, feed);
     }
 
-    private void parseStockNames(String response, Integer limit){
-        stockNameList = new ArrayList<>();
-        try {
-            JSONArray jsonArray = new JSONArray(response.toString());
-            limit = limit < jsonArray.length() ? limit : jsonArray.length(); //make sure limit is valid
-            if(limit == 0)
-                return;
-            for(int i = 0; i < limit; i++){
-                JSONObject stock = jsonArray.getJSONObject(i);
-                String stock_symbol = stock.getString("Symbol");
-                String stock_name = stock.getString("Name");
-                String stock_exchange = stock.getString("Exchange");
-                StockName stockName = new StockName(stock_symbol, stock_name, stock_exchange);
-                stockNameList.add(stockName);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
 
     private void displayData() {
         if (stockNameList != null) {
@@ -281,12 +277,49 @@ public class MainActivity extends AppCompatActivity{
 
     /***************** Switch and ImageButton, Auto Refresh and Manual Refresh ****************/
     private void configureRefresh() {
+        pb_refreshing = findViewById(R.id.pb_refreshing);
+
+        //auto
 
 
 
-
+        //manual
         imgBtn_manual_refresh = findViewById(R.id.imgBtn_manual_refresh);
+        imgBtn_manual_refresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pb_refreshing.setVisibility(ProgressBar.VISIBLE);
+                //get favoriteStockList, by now, we already got this (favoriteStockList initialized onCreate())
 
+                StorageService storageService = StorageService.getInstance(MainActivity.this); //get storage instance
+                favoriteStockList = storageService.getFavoriteStockList("favoriteStockList");
+                //validation check
+                if(favoriteStockList == null || favoriteStockList.size() == 0) { //if no list
+                    Toast.makeText(MainActivity.this, "No favorite stock to refresh", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                favoriteSize = favoriteStockList.size();
+                finishNum = 0;
+
+                //iterate and request new data
+                volleyNetworkService = VolleyNetworkService.getInstance();
+                refreshedFavoriteStockList = new ArrayList<>(); //prepare for updated result
+                for(int i = 0; i < favoriteSize; i++)
+                    refreshedFavoriteStockList.add(null);
+
+                for(int i = 0 ; i < favoriteStockList.size(); i++){
+                    FavoriteStock favoriteStock = favoriteStockList.get(i);
+                    String feed = "price?symbol=" + favoriteStock.getSymbol(); //symbol to query
+                    Log.i(TAG, "Query update: " + feed);
+                    //pass its index to callback to update
+                    volleyNetworkService.getDataAsString(GET_UPDATED_STOCK_DETAILS + "," + i, feed);
+                }
+
+                //update list view, in call back function
+                FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
+                lv_favorite.setAdapter(favoriteListAdapter);
+            }
+        });
 
 
     }
@@ -405,6 +438,11 @@ public class MainActivity extends AppCompatActivity{
         FavoriteListAdapter favoriteListAdapter = new FavoriteListAdapter(favoriteStockList);
         favoriteListAdapter.notifyDataSetChanged();
         lv_favorite.setAdapter(favoriteListAdapter);
+
+        //store updated list
+        StorageService storageService = StorageService.getInstance();
+        //over write favoriteStockList
+        storageService.setFavoriteStockList("favoriteStockList", favoriteStockList);
     }
 
     /**
@@ -430,7 +468,6 @@ public class MainActivity extends AppCompatActivity{
             }
         });
     }
-
     /***************************** ListView, for Favorite Stock List *****************************/
 
 }
