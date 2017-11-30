@@ -9,6 +9,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -30,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -94,6 +97,9 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //hide Soft Keyboard when activity starts
+        //<activity android:name=".stocksearch.MainActivity" android:windowSoftInputMode="stateHidden" />
 
         //volley init
         initVolleyCallback(); //init call back
@@ -307,6 +313,9 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
+                                    if(!Objects.equals(finishNum, favoriteSize)) //if last refresh hasn't finish
+                                        return;
+                                    pb_refreshing.setVisibility(ProgressBar.VISIBLE);
                                     refreshFavoriteListOnce();
 //                                    Toast.makeText(getApplicationContext(), "Start Auto Refresh", Toast.LENGTH_SHORT).show();
                                 }
@@ -468,6 +477,7 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
         lv_favorite = findViewById(R.id.lv_favorite);
         constructFavoriteStockListFromStorage();
         updateFavoriteList();
+        registerForContextMenu(lv_favorite);
     }
 
     private void reSortFavoriteStockList(){
@@ -512,13 +522,51 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
 
                 //here, do not check input validation... since it must be valid
                 String querySymbol = dataModel.getSymbol();
-                Log.i(TAG, querySymbol + ", " + querySymbol.length());
+//                Log.i(TAG, querySymbol + ", " + querySymbol.length());
                 Intent intent = new Intent(getBaseContext(), StockDetailsActivity.class);
                 intent.putExtra("symbol", querySymbol);
                 startActivity(intent);
             }
         });
     }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        menu.add(0, 0, 0, "Remove from Favorites?");
+        menu.setGroupEnabled(0, false);
+
+        menu.add(1, 0, 0, "No");
+        menu.add(1,1,1,"Yes");
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        int index = menuInfo.position;
+
+        Log.i(TAG, index + ", " + item.toString());
+
+        switch (item.getItemId()){
+            case 0:
+                //do not delete
+
+
+                Toast.makeText(MainActivity.this, "Selected No", Toast.LENGTH_SHORT).show();
+                break;
+            case 1:
+                //delete stock from favorite list
+                Log.i(TAG, item.getItemId() + "");
+
+
+                Toast.makeText(MainActivity.this, "Selected Yes", Toast.LENGTH_SHORT).show();
+                break;
+        }
+        return true;
+    }
+
+
+    //if refreshing, do not allow delete item from favorite list
+
     /***************************** ListView, for Favorite Stock List *****************************/
 
 }

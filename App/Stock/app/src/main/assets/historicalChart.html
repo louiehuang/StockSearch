@@ -23,6 +23,16 @@
         }
 
         var priceJsonObj;
+        var isFinishLoading;
+
+
+        /**
+        * Java interface, get status of whether chart has been loaded
+        */
+        function getChartLoadingStatus(){
+            AndroidGetHistoricalLStatus.getLoadingStatus(isFinishLoading); //url or '' if not finish
+        }
+
 
         //for java class to call
         function interfaceInitiate(symbol){
@@ -40,6 +50,7 @@
                     priceJsonObj = result;
                     finishedCharts++;
                     createStockChart();
+                    isFinishLoading = true;
                     // console.log("fetchPrice returns");
                 },
                 error: function(xhr, textStatus, errorThrown ) {

@@ -6,9 +6,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 import edu.usc.liuyinhu.R;
 
@@ -25,6 +29,10 @@ public class StockHistoricalFragment  extends Fragment {
     ProgressBar pb_loadingStockChart;
     WebView wv_historical;
 
+
+    Timer timer;
+    TimerTask timerTask;
+    boolean isFinishLoading = false;
 
     public StockHistoricalFragment() { }
 
@@ -61,15 +69,41 @@ public class StockHistoricalFragment  extends Fragment {
 
         //create webView
         wv_historical.getSettings().setJavaScriptEnabled(true);
+
+
+        //interface to get variable in JS, for facebook sharing
+        wv_historical.addJavascriptInterface(new historicalChartJSInterface(), "AndroidGetHistoricalLStatus");
+
+
         wv_historical.loadUrl("file:///android_asset/historicalChart.html"); //create html
         //notice that loadUrl is async!!! so to call function, make sure all functions have been loaded
         wv_historical.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 wv_historical.loadUrl("javascript:interfaceInitiate('" + symbol + "')");
-                updateProgressBar();
             }
         });
+
+
+        //get status
+        timer = new Timer();
+        TimerTask timerTask = new TimerTask(){
+            @Override
+            public void run() {
+//                Log.i(TAG, "running...");
+                wv_historical.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        wv_historical.loadUrl("javascript:getChartLoadingStatus()"); //it's async!!!
+                    }
+                });
+                if(isFinishLoading){
+                    updateProgressBar();
+                    timer.cancel();
+                }
+            }
+        };
+        timer.schedule(timerTask,0,1000);
 
         return rootView;
     }
@@ -82,7 +116,20 @@ public class StockHistoricalFragment  extends Fragment {
 
     private void updateProgressBar(){
         pb_loadingStockChart.setVisibility(ProgressBar.INVISIBLE);
-//        wv_historical.setVisibility(WebView.VISIBLE);
+//        wv_historical.setVisibility(WebView.VISIBLE); //no need
+    }
+
+    /**
+     * For JS, this is the interface to get variable from JS
+     */
+    class historicalChartJSInterface {
+        /**
+         * This method is also in JS, as interface, to fetch the status whether chart has been loaded(variable in JS)
+         */
+        @JavascriptInterface
+        public void getLoadingStatus(boolean finishLoading){
+            isFinishLoading = finishLoading;
+        }
     }
 
 
