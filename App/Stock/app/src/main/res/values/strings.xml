@@ -1,10 +1,27 @@
 <resources>
     <string name="app_name">StockSearch</string>
     <string name="title_activity_stock_details">StockDetailsActivity</string>
+
+
+    <string name="homepage_title">Stock Market Search</string>
+    <string name="btn_text_getQuote">Get Quote</string>
+    <string name="btn_text_clear">Clear</string>
+
+    <string name="text_favorites">Favorites</string>
+    <string name="text_autoRefresh">AutoRefresh</string>
+
+
     <string name="tab_text_1">CURRENT</string>
     <string name="tab_text_2">HISTORICAL</string>
     <string name="tab_text_3">NEWS</string>
     <string name="action_settings">Settings</string>
+
+    <string name="stock_table_title">Stock Details</string>
+    <string name="fail_load_msg">Failed to load data.</string>
+    <string name="spinner_text_Indicators">Indicators</string>
+    <string name="spinner_text_Change">Change</string>
+
+
     <string name="section_format">Hello World from section: %1$d</string>
 
     <string name="facebook_app_id">918643571616008</string>

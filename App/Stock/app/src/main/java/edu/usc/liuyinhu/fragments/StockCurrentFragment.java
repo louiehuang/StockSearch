@@ -6,8 +6,11 @@ package edu.usc.liuyinhu.fragments;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,6 +23,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TableLayout;
@@ -39,6 +43,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -62,7 +67,9 @@ public class StockCurrentFragment extends Fragment implements ParamConfiguration
     private static final String TAG = "StockCurrentFragment";
 
     private String symbol;
-    private String selectedIndicator;
+    private String selectedIndicator = "Price"; //default
+    private boolean changedIndicator = false; //if not change, make Change button un clickable
+    HashMap<String, Integer> indicatorMap;
 
     VolleyCallbackListener callbackListener = null;
     VolleyNetworkService volleyNetworkService = null;
@@ -88,6 +95,7 @@ public class StockCurrentFragment extends Fragment implements ParamConfiguration
     /**** Table TextView ****/
     TextView tv_symbol; TextView tv_lastPrice; TextView tv_change; TextView tv_timestamp;
     TextView tv_open; TextView tv_close; TextView tv_dayRange; TextView tv_volume;
+    ImageView iv_change_arrow;
     /**** Table TextView  ****/
 
     /**** Spinner ****/
@@ -326,11 +334,13 @@ public class StockCurrentFragment extends Fragment implements ParamConfiguration
         tv_dayRange = rootView.findViewById(R.id.tv_dayRange);
         tv_volume = rootView.findViewById(R.id.tv_volume);
 
+        iv_change_arrow = rootView.findViewById(R.id.iv_change_arrow);
         tableLayout_details.setVisibility(TableLayout.VISIBLE);
         tv_errorMsg.setVisibility(TextView.INVISIBLE);
     }
 
 
+    private boolean isSpinnerInitial = true;
     /**
      * Init spinner and change Button
      */
@@ -338,21 +348,62 @@ public class StockCurrentFragment extends Fragment implements ParamConfiguration
         spinner_indicators = rootView.findViewById(R.id.spinner_indicators);
         btn_change = rootView.findViewById(R.id.btn_change);
         String[] indicatorItems = new String[]{"Price", "SMA", "EMA", "STOCH", "MACD", "BBANDS", "RSI", "ADX", "CCI"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_dropdown_item, indicatorItems);
+        indicatorMap = new HashMap<>(); //<sortingFields, position>
+        for(int i = 0; i < indicatorItems.length; i++)
+            indicatorMap.put(indicatorItems[i], i);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                getActivity(), android.R.layout.simple_spinner_dropdown_item, indicatorItems){
+            @Override
+            public boolean isEnabled(int position) {
+                //position != 0 && position != current Selected Item
+                return !(position == indicatorMap.get(selectedIndicator));
+            }
+            @Override
+            public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                TextView tv = (TextView) view;
+                if(position == indicatorMap.get(selectedIndicator)) { //position == current Selected Item
+                    tv.setTextColor(Color.GRAY);  // Set the disable item text color
+                }else{
+                    tv.setTextColor(Color.BLACK);
+                }
+                return view;
+            }
+        };
+
+
         spinner_indicators.setAdapter(adapter);
         spinner_indicators.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+//                if(isSpinnerInitial) { //do not call onItemSelected() on init, so use a variable to count
+//                    isSpinnerInitial = false;
+//                }else{
+//                    String item = parent.getItemAtPosition(position).toString();
+//                    selectedIndicator = item;
+////                    Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_LONG).show();
+//                    changedIndicator = true; //changed indicator, enable change button
+//                    updateChangeButton();
+//                }
                 String item = parent.getItemAtPosition(position).toString();
                 selectedIndicator = item;
-//                Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_LONG).show();
+                changedIndicator = true; //changed indicator, enable change button
+                updateChangeButton();
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) { }
         });
+
+
+        //initial disable
+        changedIndicator = false;
+        updateChangeButton(); //false, not clickable
         btn_change.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.i(TAG, "selected: " + selectedIndicator);
+                changedIndicator = false; //after change, disable it
+                updateChangeButton();
                 //have to use another thread to call js function
                 wv_indicator.post(new Runnable() {
                     @Override
@@ -362,6 +413,15 @@ public class StockCurrentFragment extends Fragment implements ParamConfiguration
                 });
             }
         });
+    }
+
+    private void updateChangeButton(){
+        //btn for change
+        if(changedIndicator){
+            btn_change.setEnabled(true);
+        }else{
+            btn_change.setEnabled(false);
+        }
     }
 
     /**
@@ -478,12 +538,21 @@ public class StockCurrentFragment extends Fragment implements ParamConfiguration
             /******************** update ********************/
             tv_symbol.setText(this.symbol);
             tv_lastPrice.setText(df.format(prevClose));
-            tv_change.setText(textChange);
             tv_timestamp.setText(lastRefreshedTime);
             tv_open.setText(df.format(curOpen));
             tv_close.setText(df.format(curClose));
             tv_dayRange.setText(curRange);
             tv_volume.setText(curVolume);
+
+            tv_change.setText(textChange);
+            if(changeNum >= 0){
+                tv_change.setTextColor(Color.parseColor("#7BB220"));
+                iv_change_arrow.setImageResource(R.drawable.arrow_up);
+            }else{
+                tv_change.setTextColor(Color.RED);
+                iv_change_arrow.setImageResource(R.drawable.arrow_down);
+            }
+
 
             /******************** create current stock ********************/
             currentStock = new FavoriteStock(symbol, Double.parseDouble(df.format(curClose)),

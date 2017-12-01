@@ -29,10 +29,10 @@ public class StockHistoricalFragment  extends Fragment {
     ProgressBar pb_loadingStockChart;
     WebView wv_historical;
 
-
     Timer timer;
     TimerTask timerTask;
     boolean isFinishLoading = false;
+    boolean isErrorInFetching = false;
 
     public StockHistoricalFragment() { }
 
@@ -72,22 +72,12 @@ public class StockHistoricalFragment  extends Fragment {
 
 
         //interface to get variable in JS, for facebook sharing
-        wv_historical.addJavascriptInterface(new historicalChartJSInterface(), "AndroidGetHistoricalLStatus");
-
-
-        wv_historical.loadUrl("file:///android_asset/historicalChart.html"); //create html
-        //notice that loadUrl is async!!! so to call function, make sure all functions have been loaded
-        wv_historical.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                wv_historical.loadUrl("javascript:interfaceInitiate('" + symbol + "')");
-            }
-        });
-
+        wv_historical.addJavascriptInterface(new historicalChartJSInterface(), "AndroidGetHistoricalLoadingStatus");
+        wv_historical.addJavascriptInterface(new historicalChartJSInterface(), "AndroidGetHistoricalErrorStatus");
 
         //get status
         timer = new Timer();
-        TimerTask timerTask = new TimerTask(){
+        timerTask = new TimerTask(){
             @Override
             public void run() {
 //                Log.i(TAG, "running...");
@@ -95,15 +85,26 @@ public class StockHistoricalFragment  extends Fragment {
                     @Override
                     public void run() {
                         wv_historical.loadUrl("javascript:getChartLoadingStatus()"); //it's async!!!
+                        wv_historical.loadUrl("javascript:getChartErrorStatus()"); //it's async!!!
                     }
                 });
-                if(isFinishLoading){
+                if(isFinishLoading || isErrorInFetching){ //finish or error, terminate timer, hide progress bar
                     updateProgressBar();
                     timer.cancel();
                 }
             }
         };
-        timer.schedule(timerTask,0,1000);
+
+        wv_historical.loadUrl("file:///android_asset/historicalChart.html"); //create html
+        //notice that loadUrl is async!!! so to call function, make sure all functions have been loaded
+        wv_historical.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                wv_historical.loadUrl("javascript:interfaceInitiate('" + symbol + "')");
+                timer.schedule(timerTask,0,1000);
+            }
+        });
+
 
         return rootView;
     }
@@ -129,6 +130,11 @@ public class StockHistoricalFragment  extends Fragment {
         @JavascriptInterface
         public void getLoadingStatus(boolean finishLoading){
             isFinishLoading = finishLoading;
+        }
+
+        @JavascriptInterface
+        public void getErrorStatus(boolean errorLoading){
+            isErrorInFetching = errorLoading;
         }
     }
 

@@ -21,7 +21,12 @@ import edu.usc.liuyinhu.interfaces.VolleyCallbackListener;
 
 public class VolleyNetworkService {
     private static final String TAG = "VolleyNetworkService";
-    private static final String BASE_URL = "http://10.0.2.2:3000/";
+
+    //local test => http://10.0.2.2:3000/   such as http://10.0.2.2:3000/autocomplete?symbol=AAPL
+    //server use => http://liuyinstock.us-east-2.elasticbeanstalk.com/
+    //also remeber to change the base_url in currentChart.html and historicalChart.html
+    private static final String BASE_URL = "http://liuyinstock.us-east-2.elasticbeanstalk.com/";
+
     private static final Integer TIMEOUT_LIMIT = 15000;
 
     private static VolleyNetworkService instance = null;
@@ -52,10 +57,11 @@ public class VolleyNetworkService {
     }
 
 
-
-
-
-
+    /**
+     * send StringRequest, get response as String
+     * @param requestType
+     * @param feed
+     */
     public void getDataAsString(final String requestType, String feed){
         String queryURL = BASE_URL + feed;
         Log.d(TAG + ": ", requestType + ", url: " + queryURL);

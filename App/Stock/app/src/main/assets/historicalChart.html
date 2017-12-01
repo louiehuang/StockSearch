@@ -14,8 +14,8 @@
 
 
 <script>
-        //var base_url = "http://localhost:3000/";
-        var base_url = "http://10.0.2.2:3000/";
+        //var base_url = "http://10.0.2.2:3000/"; //localhost
+        var base_url = "http://liuyinstock.us-east-2.elasticbeanstalk.com/";
 
         var finishedCharts = 0; //needs to be 1 (1 price)
         function getFinishedNum(){
@@ -23,14 +23,21 @@
         }
 
         var priceJsonObj;
-        var isFinishLoading;
-
+        var isFinishLoading = false; //finish loading data
+        var isErrorInFetching = false; //cannot get data
 
         /**
         * Java interface, get status of whether chart has been loaded
         */
         function getChartLoadingStatus(){
-            AndroidGetHistoricalLStatus.getLoadingStatus(isFinishLoading); //url or '' if not finish
+            AndroidGetHistoricalLoadingStatus.getLoadingStatus(isFinishLoading); //url or '' if not finish
+        }
+
+        /**
+        * Java interface, get status of whether chart has been loaded
+        */
+        function getChartErrorStatus(){
+            AndroidGetHistoricalErrorStatus.getErrorStatus(isErrorInFetching);
         }
 
 
@@ -62,7 +69,8 @@
                             $.ajax(this); //try again
                             return;
                         }
-                        showErrMsg();
+                        isErrorInFetching = true;
+                        showErrMsg(); //change div
                         return;
                     }
                 },
@@ -97,6 +105,9 @@
                 subtitle: {
                   useHTML:true,
                   text: "<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+                },
+                yAxis: {
+                    title: { text: 'Stock Value' }
                 },
                 rangeSelector: {
                       buttons: [{

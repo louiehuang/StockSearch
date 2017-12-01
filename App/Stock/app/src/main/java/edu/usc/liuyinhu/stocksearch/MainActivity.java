@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
 
     /*************************** AutoComplete ************************/
     AutoCompleteTextView ac_stock_input;
+    ProgressBar pb_autoComplete;
     Integer autoCompleteLimit = 5; //show 5 items
     List<StockName> stockNameList;
     ArrayAdapter<StockName> acAdapter;
@@ -131,7 +132,12 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
         btn_getQuote.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                queryStockInfo(symbol);
+                //validation check, if invalid symbol or input
+                if(!isInputValidate(symbol) || !isInputValidate(ac_stock_input.getText().toString())){
+                    Toast.makeText(MainActivity.this, "Please enter a stock name or symbol", Toast.LENGTH_SHORT).show();
+                }else {
+                    queryStockInfo(symbol);
+                }
             }
         });
 
@@ -150,8 +156,6 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
      */
     private void queryStockInfo(String querySymbol){
         Log.i(TAG, querySymbol);
-        if(!isInputValidate()) //validation check, invalid input
-            return;
         //if full name, make it acronym, AAPL - Apple Inc (NASDAQ) => AAPL
         if(querySymbol.contains(" - "))
             querySymbol = querySymbol.substring(0, querySymbol.indexOf(" - "));
@@ -160,10 +164,15 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
         startActivity(intent);
     }
 
-    private boolean isInputValidate(){
-        if(null == symbol || symbol.length() == 0)
+    /**
+     * if invalid, return false
+     * @param input
+     * @return
+     */
+    private boolean isInputValidate(String input){
+        if(null == input || input.length() == 0)
             return false;
-        int length = symbol.replaceAll("\\s+", "").length();
+        int length = input.replaceAll("\\s+", "").length();
         return (length > 0); //not empty and not just only contains space
     }
     /***************************** Button, Get Quote and Clear  *****************************/
@@ -173,6 +182,7 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     /***************************** AutoCompleteTextView, Using Volley*****************************/
     private void configureAutoComplete() {
         ac_stock_input = findViewById(R.id.ac_stock_input); //auto complete
+        pb_autoComplete = findViewById(R.id.pb_autoComplete);
         ac_stock_input.setThreshold(1); //will start working from first character
         ac_stock_input.addTextChangedListener(new TextWatcher() {
             @Override
@@ -191,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
                     //This is when click auto complete item, text now is like: "AAPL - APPLE INC (NASDAQ)"
                     if(symbol.contains(" - ")) //do not send request for this finished text
                         return;
+                    pb_autoComplete.setVisibility(ProgressBar.VISIBLE);
                     requestAutoCompleteData(symbol);
                 }
             }
@@ -218,6 +229,7 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
                 //process auto complete returned data
                 if(requestType.equals(GET_AUTOCOMPLETE) && null != response){
                     stockNameList = ParseService.parseStockNames(response.toString(), autoCompleteLimit); //parse autocomplete
+                    pb_autoComplete.setVisibility(ProgressBar.INVISIBLE); //finish
                     displayData(); //update view
                 }else if(requestType.contains(GET_UPDATED_STOCK_DETAILS)){
                     if(null == response){
@@ -476,9 +488,10 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
     private void configureFavoriteStockList() {
         Log.i(TAG, selectedSortField + ", " + selectedOrderRule);
         lv_favorite = findViewById(R.id.lv_favorite);
-        constructFavoriteStockListFromStorage();
-        updateFavoriteList();
-        registerForContextMenu(lv_favorite);
+        constructFavoriteStockListFromStorage(); //fetch
+        reSortFavoriteStockList(); //sort
+        updateFavoriteList(); //update
+        registerForContextMenu(lv_favorite); //long click menu
     }
 
     private void reSortFavoriteStockList(){
@@ -580,8 +593,8 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
         //update view
         updateFavoriteList();
 
-        //overwrite
-
+        //over write favoriteStockList
+        storageService.setFavoriteStockList("favoriteStockList", favoriteStockList);
     }
 
     /***************************** ListView, for Favorite Stock List *****************************/

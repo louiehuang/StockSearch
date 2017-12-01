@@ -23,8 +23,26 @@
         }
 
         var priceJsonObj;
-        
+        var isFinishLoading = false; //finish loading data
+        var isErrorInFetching = false; //cannot get data
+
         interfaceInitiate('AAPL');
+
+
+        /**
+        * Java interface, get status of whether chart has been loaded
+        */
+        function getChartLoadingStatus(){
+            AndroidGetHistoricalStatus.getLoadingStatus(isFinishLoading); //url or '' if not finish
+        }
+
+        /**
+        * Java interface, get status of whether chart has been loaded
+        */
+        function getChartErrorStatus(){
+            AndroidGetHistoricalErrorStatus.getErrorStatus(isErrorInFetching); 
+        }
+
 
         //for java class to call
         function interfaceInitiate(symbol){
@@ -42,7 +60,8 @@
                     priceJsonObj = result;
                     finishedCharts++;
                     createStockChart();
-                    // console.log("fetchPrice returns");
+                    isFinishLoading = true;
+                    console.log(isFinishLoading);
                 },
                 error: function(xhr, textStatus, errorThrown ) {
                     //as backend returns 404 if api fails
@@ -53,7 +72,8 @@
                             $.ajax(this); //try again
                             return;
                         }
-                        showErrMsg();
+                        isErrorInFetching = true;
+                        showErrMsg();  //change div
                         return;
                     }
                 },
@@ -88,6 +108,9 @@
                 subtitle: {
                   useHTML:true,
                   text: "<a target='_blank' style='text-decoration: none' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+                },
+                yAxis: {
+                    title: { text: 'Stock Value' }
                 },
                 rangeSelector: { selected: 1 },
                 series: [{

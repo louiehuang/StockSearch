@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/restaurant"
     tools:context="edu.usc.liuyinhu.stocksearch.MainActivity">
 
 
@@ -13,10 +14,11 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="18dp"
-        android:text="Stock Market Search"
+        android:layout_marginTop="20dp"
+        android:text="@string/homepage_title"
         android:textAlignment="center"
-        android:textSize="24sp"
+        android:textColor="#ffffff"
+        android:textSize="26sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,6 +28,7 @@
     <AutoCompleteTextView
         android:id="@+id/ac_stock_input"
         android:inputType="textNoSuggestions"
+        android:textColor="#ffffff"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="20dp"
@@ -49,7 +52,10 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
             android:layout_marginTop="8dp"
-            android:text="Get Quote"
+            android:textColor="#394EB7"
+            android:textSize="22sp"
+            android:background="@android:color/transparent"
+            android:text="@string/btn_text_getQuote"
             app:layout_constraintStart_toStartOf="parent" />
 
         <!--Empty View is trying to take the maximum amount of space, leaving room for the button.-->
@@ -64,7 +70,10 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="50dp"
             android:layout_marginTop="8dp"
-            android:text="Clear"
+            android:textColor="#394EB7"
+            android:textSize="22sp"
+            android:background="@android:color/transparent"
+            android:text="@string/btn_text_clear"
             app:layout_constraintEnd_toEndOf="parent"/>
     </LinearLayout>
 
@@ -73,7 +82,7 @@
         android:id="@+id/ll_refresh_wrap"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintTop_toBottomOf="@+id/ll_button_wrap">
 
         <TextView
@@ -81,7 +90,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="30dp"
             android:textSize="22sp"
-            android:text="Favorites" />
+            android:textColor="#ffffff"
+            android:text="@string/text_favorites" />
 
         <!--Empty View is trying to take the maximum amount of space, leaving room for the button.-->
         <View
@@ -92,51 +102,63 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AutoRefresh"
+            android:textColor="#ffffff"
+            android:text="@string/text_autoRefresh"
             app:layout_constraintStart_toStartOf="parent" />
 
         <Switch
             android:id="@+id/switch_auto_refresh"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"/>
+            android:layout_marginStart="5dp"/>
 
         <ImageButton
             android:id="@+id/imgBtn_manual_refresh"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:background="#ffffff"
+            android:background="@android:color/transparent"
             android:layout_marginEnd="20dp"
             android:layout_marginTop="3dp"
             android:adjustViewBounds="true"
             android:padding="3dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_refresh_black_48dp"/>
+            android:src="@android:drawable/stat_notify_sync" />
     </LinearLayout>
 
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/ll_spinner_wrap"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@+id/ll_refresh_wrap">
 
-        <Spinner
-            android:id="@+id/spinner_sortBy"
-            android:layout_marginStart="50dp"
-            android:layout_width="0dp"
+        <!--If loading auto complete, show this ProgressBar-->
+        <ProgressBar
+            android:id="@+id/pb_autoComplete"
+            android:visibility="invisible"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="0.50"
-            android:spinnerMode="dropdown" />
+            android:layout_gravity="center"/>
 
-        <Spinner
-            android:id="@+id/spinner_orderRule"
-            android:layout_marginEnd="30dp"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.50"
-            android:spinnerMode="dropdown" />
-    </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <Spinner
+                android:id="@+id/spinner_sortBy"
+                android:layout_marginStart="50dp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.50"
+                android:spinnerMode="dropdown" />
+            <Spinner
+                android:id="@+id/spinner_orderRule"
+                android:layout_marginEnd="30dp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.50"
+                android:spinnerMode="dropdown" />
+        </LinearLayout>
+    </FrameLayout>
 
 
 
@@ -145,6 +167,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        android:background="#ffffff"
         app:layout_constraintTop_toBottomOf="@+id/ll_spinner_wrap">
 
         <!--If loading, show this ProgressBar-->
@@ -159,11 +182,8 @@
             android:id="@+id/lv_favorite"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
             android:layout_marginTop="12dp" />
     </FrameLayout>
-
 
 
 </android.support.constraint.ConstraintLayout>

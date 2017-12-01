@@ -17,6 +17,7 @@
         <button id = "btn_two_indicator">STOCH</button>
         <button id = "btn_indicator_macd">MACD</button>
         <button id = "btn_indicator_bbands">BBANDS</button>
+        <button id = "btn_fb">Facebook</button>
         <div style="text-align: center;" id="chart_container"></div>
     </body>
 
@@ -39,6 +40,9 @@
         //record whetehr error occurs in data querying, used for alert (error handling)
         var errInLoadingMap = {'Price': false, 'SMA': false, 'EMA': false, 'STOCH': false, 'RSI': false,
         'ADX': false, 'CCI': false, 'BBANDS': false, 'MACD': false, 'News': false};
+
+        //chart url
+        var chartImgURL = '';
 
 
         interfaceInitiate("AAP");
@@ -70,6 +74,9 @@
         $("#btn_indicator_bbands").click(function(){
             interfaceCreateChart('BBANDS');
         });
+        $("#btn_fb").click(function(){
+            shareOnFacebook();
+        });
 
 
         //for java class to call
@@ -90,6 +97,7 @@
             }else{
                 createThreeLineChart(indicatorJsonObjMap[indicator], indicator); //3
             }
+            shareOnFacebook(indicator); //generate chart url
         }
 
 
@@ -168,6 +176,46 @@
                 return true;
             }
             return false;
+        }
+
+
+        /**
+        * when clicking facebook button, chartImgURL should have been initialized
+        */
+        function getChartImageURL(){
+            AndroidGetChart.getImageURL(chartImgURL); //url or '' if not finish
+        }
+
+
+        /**
+        * export stock chart to facebook
+        */
+        function shareOnFacebook(indicator){
+            //export chart, chart_container
+            var chart = $("#chart_container").highcharts();
+            if(chart == undefined)
+                return;
+            var chartOptions = JSON.stringify(chart.userOptions);
+            var imgURI = encodeURI('async=false&type=jpeg&width=600&options=' + chartOptions); //body    
+            var exportImgURL = base_url + "/postImg";
+            // let exportImgURL = "http://localhost:3000/postImg";
+
+            $.ajax({    
+                type: 'post',
+                url: exportImgURL,    
+                data: imgURI,
+                dataType:'text',
+                success:function(data){    
+                    //may return "{"message":"Too many requests, you have been rate limited. Please try again later."}"
+                    //data = "http://export.highcharts.com/charts/chart.3c0ecd5b480c4a2eb672a78a11c0fdad.png"
+                    chartImgURL = data;
+                    console.log(chartImgURL);
+                },    
+                error:function(XMLHttpRequest, textStatus, errorThrown){
+                    console.log(XMLHttpRequest.statusText);
+                    console.log(textStatus + ", " + errorThrown);
+                }
+            });
         }
 
 
