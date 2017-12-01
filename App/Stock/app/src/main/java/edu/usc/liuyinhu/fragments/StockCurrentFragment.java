@@ -467,21 +467,30 @@ public class StockCurrentFragment extends Fragment implements ParamConfiguration
         callbackListener = new VolleyCallbackListener() {
             @Override
             public void notifySuccess(String requestType, Object response) {
-//                Log.d(TAG, "Volley Stock Details: " + response);
+                Log.d(TAG, "Volley Stock Details: " + response);
                 if(requestType.equals(GET_STOCK_DETAILS)){
-                    updateStockDetailsTable(response.toString()); //parse and update, and create currentStock
-                    updateProgressBar();
+                    if(response.toString().contains("Error Message")){
+                        //{"Error Message":"Invalid API call. Please retry or visit the documentation (https://www.alphavantage.co/documentation/) for TIME_SERIES_DAILY."}
+                        handleError();
+                    }else {
+                        updateStockDetailsTable(response.toString()); //parse and update, and create currentStock
+                        updateProgressBar();
+                    }
                 }
             }
             @Override
             public void notifyError(String requestType,VolleyError error) {
                 Log.d(TAG, "Volley Error: " + error.getMessage());
-                tableLayout_details.setVisibility(TableLayout.INVISIBLE);
-                pb_loadingTable.setVisibility(ProgressBar.INVISIBLE);
-                tv_errorMsg.setVisibility(TextView.VISIBLE);
-                currentStock = null;
+                handleError();
             }
         };
+    }
+
+    private void handleError(){
+        tableLayout_details.setVisibility(TableLayout.INVISIBLE);
+        pb_loadingTable.setVisibility(ProgressBar.INVISIBLE);
+        tv_errorMsg.setVisibility(TextView.VISIBLE);
+        currentStock = null;
     }
 
     /**

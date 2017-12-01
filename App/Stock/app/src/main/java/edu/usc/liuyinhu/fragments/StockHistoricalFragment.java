@@ -86,12 +86,17 @@ public class StockHistoricalFragment  extends Fragment {
                     public void run() {
                         wv_historical.loadUrl("javascript:getChartLoadingStatus()"); //it's async!!!
                         wv_historical.loadUrl("javascript:getChartErrorStatus()"); //it's async!!!
+                        if(isFinishLoading || isErrorInFetching){ //finish or error, terminate timer, hide progress bar
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    updateProgressBar();
+                                }
+                            });
+                            timer.cancel();
+                        }
                     }
                 });
-                if(isFinishLoading || isErrorInFetching){ //finish or error, terminate timer, hide progress bar
-                    updateProgressBar();
-                    timer.cancel();
-                }
             }
         };
 
@@ -101,7 +106,9 @@ public class StockHistoricalFragment  extends Fragment {
             @Override
             public void onPageFinished(WebView view, String url) {
                 wv_historical.loadUrl("javascript:interfaceInitiate('" + symbol + "')");
-                timer.schedule(timerTask,0,1000);
+                if(timer != null) {
+                    timer.schedule(timerTask, 0, 1000);
+                }
             }
         });
 
@@ -109,11 +116,6 @@ public class StockHistoricalFragment  extends Fragment {
         return rootView;
     }
 
-
-//    private void initVisibility() {
-//        pb_loadingStockChart.setVisibility(ProgressBar.VISIBLE);
-//        wv_historical.setVisibility(WebView.INVISIBLE);
-//    }
 
     private void updateProgressBar(){
         pb_loadingStockChart.setVisibility(ProgressBar.INVISIBLE);

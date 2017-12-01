@@ -99,8 +99,12 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //hide Soft Keyboard when activity starts
-        //<activity android:name=".stocksearch.MainActivity" android:windowSoftInputMode="stateHidden" />
+        /******************** hide Soft Keyboard when activity starts *******************
+         * 1. for simulator: use:
+         //<activity android:name=".stocksearch.MainActivity" android:windowSoftInputMode="stateAlwaysHidden" />
+           2. for real device, use:
+         //<activity android:name=".stocksearch.MainActivity" android:windowSoftInputMode="stateHidden" />
+        ********************* hide Soft Keyboard when activity starts *******************/
 
         //volley init
         initVolleyCallback(); //init call back
@@ -109,6 +113,12 @@ public class MainActivity extends AppCompatActivity implements ParamConfiguratio
         configureQueryButton(); //configure query and clear button
 
         configureAutoComplete(); //auto complete
+
+
+        /******************** This is for simulator, always hide keyboard *******************/
+//        ac_stock_input.setInputType(InputType.TYPE_NULL);
+        /******************** This is for simulator, always hide keyboard *******************/
+
 
         configureRefresh(); //refresh switch and image button
 

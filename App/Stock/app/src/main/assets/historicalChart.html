@@ -47,6 +47,8 @@
         }
 
 
+
+
         function fetchPrice(symbol) {
             // console.log("begin fetching: price");
             $.ajax({
@@ -54,11 +56,18 @@
                 tryCount : 0,
                 retryLimit : 2,
                 success: function(result){
-                    priceJsonObj = result;
-                    finishedCharts++;
-                    createStockChart();
-                    isFinishLoading = true;
-                    // console.log("fetchPrice returns");
+                    // console.log(result.hasOwnProperty("Error Message"));
+                    if(result.hasOwnProperty("Error Message")) {
+                        // console.log(result);
+                        isErrorInFetching = true;
+                        showErrMsg();  //change div
+                    }else{
+                        priceJsonObj = result;
+                        finishedCharts++;
+                        createStockChart();
+                        isFinishLoading = true;
+                        console.log(isFinishLoading);
+                    }
                 },
                 error: function(xhr, textStatus, errorThrown ) {
                     //as backend returns 404 if api fails
@@ -70,14 +79,13 @@
                             return;
                         }
                         isErrorInFetching = true;
-                        showErrMsg(); //change div
+                        showErrMsg();  //change div
                         return;
                     }
                 },
                 async: true
             });
         }
-
 
         function showErrMsg(){
             //append child

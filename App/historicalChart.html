@@ -14,8 +14,10 @@
 
 
     <script>
-        var base_url = "http://localhost:3000/";
+        // var base_url = "http://localhost:3000/";
         // var base_url = "http://10.0.2.2:3000/";
+
+        var base_url = "http://liuyinstock.us-east-2.elasticbeanstalk.com/";
 
         var finishedCharts = 0; //needs to be 1 (1 price)
         function getFinishedNum(){
@@ -26,7 +28,7 @@
         var isFinishLoading = false; //finish loading data
         var isErrorInFetching = false; //cannot get data
 
-        interfaceInitiate('AAPL');
+        interfaceInitiate('dummy');
 
 
         /**
@@ -57,11 +59,18 @@
                 tryCount : 0,
                 retryLimit : 2,
                 success: function(result){
-                    priceJsonObj = result;
-                    finishedCharts++;
-                    createStockChart();
-                    isFinishLoading = true;
-                    console.log(isFinishLoading);
+                    // console.log(result.hasOwnProperty("Error Message"));
+                    if(result.hasOwnProperty("Error Message")) {
+                        // console.log(result);
+                        isErrorInFetching = true;
+                        showErrMsg();  //change div
+                    }else{
+                        priceJsonObj = result;
+                        finishedCharts++;
+                        createStockChart();
+                        isFinishLoading = true;
+                        console.log(isFinishLoading);
+                    }
                 },
                 error: function(xhr, textStatus, errorThrown ) {
                     //as backend returns 404 if api fails

@@ -97,19 +97,30 @@ public class StockNewsFragment extends Fragment implements ParamConfigurations {
             public void notifySuccess(String requestType, Object response) {
 //                Log.d(TAG, "Volley requester " + requestType + ", Volley Stock News: " + response);
                 if(requestType.equals(GET_NEWS)){
-                    newsList = ParseService.parseStockNews(response.toString(), NEWS_ITEM_LIMIT); //parse news, NEWS_ITEM_LIMIT = 5
-                    updateListView();
-                    pb_loadingNews.setVisibility(ProgressBar.GONE);
-                    lv_news.setVisibility(ListView.VISIBLE);
+                    if(response.toString().contains("Error Message")){
+                        //{"Error Message":"Invalid API call. Please retry or visit the documentation (https://www.alphavantage.co/documentation/) for TIME_SERIES_DAILY."}
+                        handleError();
+                    }else {
+                        newsList = ParseService.parseStockNews(response.toString(), NEWS_ITEM_LIMIT); //parse news, NEWS_ITEM_LIMIT = 5
+                        updateListView();
+                        pb_loadingNews.setVisibility(ProgressBar.GONE);
+                        lv_news.setVisibility(ListView.VISIBLE);
+                    }
                 }
             }
             @Override
             public void notifyError(String requestType,VolleyError error) {
                 Log.d(TAG, "Volley requester " + requestType + " with Error: " + error.getMessage());
-                tv_errorMsg.setVisibility(TextView.VISIBLE);
-                lv_news.setVisibility(ListView.GONE);
+                handleError();
             }
         };
+    }
+
+
+    private void handleError(){
+        tv_errorMsg.setVisibility(TextView.VISIBLE);
+        lv_news.setVisibility(ListView.GONE);
+        pb_loadingNews.setVisibility(ProgressBar.GONE);
     }
 
     private void updateListView(){
