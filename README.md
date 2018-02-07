@@ -17,11 +17,11 @@ Back end is implemented with Node.js.
 ### 2.1 Screenshops  from PC
 
 
-![](http://gitimage-10031767.file.myqcloud.com/project_image/stockweb/sample.png)
+![](https://raw.githubusercontent.com/louiehuang/StockSearch/master/Web/Images/sample.png)
 
 
 
-![](http://gitimage-10031767.file.myqcloud.com/project_image/stockweb/sample2.png)
+![](https://raw.githubusercontent.com/louiehuang/StockSearch/master/Web/Images/sample2.png)
 
 
 
@@ -31,7 +31,7 @@ Back end is implemented with Node.js.
 
 
 
-| ![Homepage](http://gitimage-10031767.file.myqcloud.com/project_image/stockweb/responsive.jpg) | ![Quotes](http://gitimage-10031767.file.myqcloud.com/project_image/stockweb/responsive1.jpg)| 
+| ![Homepage](https://raw.githubusercontent.com/louiehuang/StockSearch/master/Web/Images/responsive.jpg) | ![Quotes](https://raw.githubusercontent.com/louiehuang/StockSearch/master/Web/Images/responsive1.jpg)| 
 |:---:|:---:|
 | Homepage | Quotes | 
 
@@ -40,7 +40,7 @@ Back end is implemented with Node.js.
 
 
 
-| ![Indicators](http://gitimage-10031767.file.myqcloud.com/project_image/stockweb/responsive2.jpg) | ![Histrical Price](http://gitimage-10031767.file.myqcloud.com/project_image/stockweb/responsive3.jpg)| 
+| ![Indicators](https://raw.githubusercontent.com/louiehuang/StockSearch/master/Web/Images/responsive2.jpg) | ![Histrical Price](https://raw.githubusercontent.com/louiehuang/StockSearch/master/Web/Images/responsive3.jpg)| 
 |:---:|:---:|
 | Indicators | Histrical Price | 
 
